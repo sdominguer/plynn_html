@@ -1,530 +1,1119 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Evaluador de Retos de Innovación</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --ink: #0d0d0d;
-    --paper: #faf8f3;
-    --gold: #c9a84c;
-    --gold-light: #f0d98a;
-    --gold-pale: #fdf6e3;
-    --teal: #1a4a4a;
-    --teal-mid: #2d7070;
-    --teal-light: #e8f4f4;
-    --red: #8b2020;
-    --border: #d4c9a8;
-    --shadow: rgba(13,13,13,0.08);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
-  .header { background: var(--teal); color: var(--gold-light); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; min-height: 72px; }
-  .header-title { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700; letter-spacing: 0.01em; }
-  .header-sub { font-size: 0.75rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 300; }
-  .header-badge { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--gold-light); }
-  .badge-step { background: var(--gold); color: var(--teal); font-weight: 700; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; white-space: nowrap; }
-  .progress-track { height: 4px; background: #d4c9a8; position: sticky; top: 72px; z-index: 99; }
-  .progress-fill { height: 4px; background: var(--gold); transition: width 0.5s ease; width: 0%; }
-  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
-  .screen { display: none; }
-  .screen.active { display: block; }
-  .setup-hero { text-align: center; padding: 60px 20px 40px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
-  .setup-hero .eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--gold); font-weight: 500; margin-bottom: 16px; }
-  .setup-hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; color: var(--teal); line-height: 1.1; margin-bottom: 18px; }
-  .setup-hero p { font-size: 1rem; color: #555; max-width: 560px; margin: 0 auto; line-height: 1.7; font-weight: 300; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
-  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-section { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
-  .form-section h2 { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--teal); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  .form-section h2 .icon { width: 24px; height: 24px; background: var(--gold-pale); border: 1px solid var(--gold); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-  label { display: block; font-size: 0.82rem; font-weight: 500; color: #444; margin-bottom: 6px; }
-  input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; background: var(--paper); color: var(--ink); transition: border-color 0.2s; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--teal); }
-  textarea { resize: vertical; min-height: 68px; }
-  .mb-16 { margin-bottom: 16px; }
-  .reto-entry { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; margin-bottom: 12px; padding: 14px; background: var(--gold-pale); border: 1px solid var(--border); border-radius: 10px; }
-  .reto-num { width: 32px; height: 32px; background: var(--teal); color: var(--gold-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; margin-top: 4px; }
-  .reto-fields { display: grid; gap: 8px; }
-  .reto-fields input, .reto-fields select, .reto-fields textarea { margin: 0; }
-  .reto-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  @media (max-width: 500px) { .reto-row { grid-template-columns: 1fr; } }
-  button.del-btn { background: none; border: 1.5px solid #ccc; border-radius: 8px; color: var(--red); cursor: pointer; padding: 6px 10px; font-size: 1rem; transition: all 0.15s; margin-top: 4px; }
-  button.del-btn:hover { background: #fff0f0; border-color: var(--red); }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.92rem; transition: all 0.18s; }
-  .btn-primary { background: var(--teal); color: var(--gold-light); box-shadow: 0 4px 16px rgba(26,74,74,0.25); }
-  .btn-primary:hover { background: #0f3333; transform: translateY(-1px); }
-  .btn-secondary { background: white; color: var(--teal); border: 1.5px solid var(--teal); }
-  .btn-secondary:hover { background: var(--teal-light); }
-  .btn-gold { background: var(--gold); color: var(--teal); font-weight: 700; box-shadow: 0 4px 16px rgba(201,168,76,0.3); }
-  .btn-gold:hover { background: #b8943a; transform: translateY(-1px); }
-  .btn-sm { padding: 8px 18px; font-size: 0.82rem; }
-  .action-bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
-  .eval-tabs { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 32px; background: white; }
-  .eval-tab { flex: 1; padding: 14px 12px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 500; border-right: 1px solid var(--border); transition: all 0.15s; color: #666; }
-  .eval-tab:last-child { border-right: none; }
-  .eval-tab.active { background: var(--teal); color: var(--gold-light); font-weight: 700; }
-  .eval-tab .tab-name { font-weight: 700; font-size: 0.9rem; }
-  .eval-tab .tab-status { font-size: 0.72rem; margin-top: 2px; opacity: 0.75; }
-  .challenge-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-  .ch-pill { padding: 7px 16px; border-radius: 20px; font-size: 0.8rem; border: 1.5px solid var(--border); cursor: pointer; font-weight: 500; transition: all 0.15s; background: white; }
-  .ch-pill.active { background: var(--teal); border-color: var(--teal); color: white; }
-  .ch-pill.done { background: var(--gold-pale); border-color: var(--gold); color: var(--teal); }
-  .challenge-card { background: white; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px var(--shadow); }
-  .ch-header { background: var(--teal); padding: 24px 28px; display: flex; align-items: flex-start; gap: 16px; }
-  .ch-num { background: var(--gold); color: var(--teal); font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.4rem; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .ch-title-block .ch-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 4px; }
-  .ch-title-block h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: white; line-height: 1.4; }
-  .ch-tag { margin-left: auto; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; margin-top: 2px; }
-  .ch-tag.problema { background: #f0e8e8; color: var(--red); }
-  .ch-tag.necesidad { background: #e8eff0; color: #1a5060; }
-  .ch-tag.oportunidad { background: #eff8e8; color: #1a5020; }
-  .criteria-section { padding: 24px 28px; }
-  .axis-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; color: var(--gold); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; margin-top: 20px; }
-  .axis-label:first-of-type { margin-top: 0; }
-  .axis-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .criterion-row { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 14px 0; border-bottom: 1px dashed var(--border); }
-  .criterion-row:last-child { border-bottom: none; }
-  .criterion-text { font-size: 0.88rem; color: #333; line-height: 1.5; }
-  .star-rating { display: flex; gap: 4px; flex-shrink: 0; }
-  .star { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--border); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.12s; color: #ccc; }
-  .star.selected { background: var(--gold); border-color: var(--gold); color: white; }
-  .star:hover { background: var(--gold-pale); border-color: var(--gold); color: var(--gold); }
-  .ch-score-bar { background: var(--teal-light); padding: 16px 28px; display: flex; gap: 24px; align-items: center; border-top: 1px solid var(--border); flex-wrap: wrap; }
-  .score-chip { text-align: center; }
-  .score-chip .sc-val { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--teal); }
-  .score-chip .sc-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--teal-mid); }
-  .score-divider { width: 1px; height: 40px; background: var(--border); }
-  .results-header { text-align: center; padding: 40px 20px 32px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
-  .results-header .eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--gold); margin-bottom: 12px; }
-  .results-header h2 { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--teal); font-weight: 900; }
-  .quadrant-wrap { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: 0 4px 24px var(--shadow); margin-bottom: 36px; }
-  .quadrant-wrap h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--teal); margin-bottom: 20px; font-weight: 700; }
-  #quadrantChart { width: 100%; aspect-ratio: 1/1; max-width: 480px; display: block; margin: 0 auto; }
-  .ranking-wrap { background: white; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px var(--shadow); margin-bottom: 36px; }
-  .ranking-wrap h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--teal); padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 700; }
-  .rank-table { width: 100%; border-collapse: collapse; }
-  .rank-table th { background: var(--teal-light); color: var(--teal); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px 16px; text-align: left; border-bottom: 1.5px solid var(--border); }
-  .rank-table td { padding: 14px 16px; border-bottom: 1px solid #f0ebe0; font-size: 0.9rem; }
-  .rank-table tr:last-child td { border-bottom: none; }
-  .rank-pos { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.3rem; color: var(--teal); }
-  .rank-medal { font-size: 1.4rem; }
-  .score-bar-cell { display: flex; align-items: center; gap: 10px; }
-  .bar-track { flex: 1; height: 8px; background: #f0ebe0; border-radius: 4px; }
-  .bar-fill { height: 8px; border-radius: 4px; background: var(--gold); transition: width 0.6s ease; }
-  .score-num { font-weight: 700; font-size: 0.88rem; min-width: 36px; text-align: right; }
-  .tag-cell { padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; display: inline-block; }
-  .priority-high { background: #e8f4e8; color: #1a5020; }
-  .priority-mid { background: #fef6dc; color: #7a5500; }
-  .priority-low { background: #f5e8e8; color: var(--red); }
-  .eval-breakdown { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: 0 4px 24px var(--shadow); margin-bottom: 36px; }
-  .eval-breakdown h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--teal); margin-bottom: 20px; font-weight: 700; }
-  .eval-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-  .eval-card { background: var(--teal-light); border-radius: 12px; padding: 16px; text-align: center; }
-  .eval-card .eval-name { font-weight: 700; color: var(--teal); margin-bottom: 4px; }
-  .eval-card .eval-stat { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--gold); }
-  .eval-card .eval-sub { font-size: 0.75rem; color: #666; }
-  .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-  .mt-24 { margin-top: 24px; }
-  .add-btn { background: white; border: 1.5px dashed var(--border); border-radius: 10px; color: var(--teal-mid); cursor: pointer; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; width: 100%; font-weight: 500; transition: all 0.15s; margin-top: 8px; }
-  .add-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-light); }
-  @media print {
-    .header, .progress-track, .eval-tabs, .challenge-nav, .action-bar, .btn { display: none !important; }
-    .screen { display: block !important; }
-    #screen-setup, #screen-evaluate { display: none !important; }
-  }
-</style>
-</head>
-<body>
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;es&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;title&gt;Evaluador de Retos de Innovación · Plynn&lt;/title&gt;
+&lt;link
+href=&quot;https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;
+0,600;0,700;0,900;1,400&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+:root {
+--navy: #1A3365;
+--navy-dark: #0f1f3d;
+--navy-mid: #2a4a8a;
+--cyan: #0FBAE3;
+--cyan-light: #e0f7fd;
+--cyan-pale: #f0fbfe;
+--red: #FF4343;
+--red-light: #fff0f0;
+--blue-grey: #61809F;
+--yellow: #FFBB00;
+--yellow-light: #fff8e0;
+--white: #ffffff;
+--off-white: #f7f9fc;
+--border: #d0dce8;
+--text: #1a2535;
+--text-mid: #4a5a70;
+--shadow: rgba(26,51,101,0.12);
 
-<div class="header">
-  <div>
-    <div class="header-sub">Comit&eacute; de Innovaci&oacute;n</div>
-    <div class="header-title">Evaluador de Retos</div>
-  </div>
-  <div class="header-badge">
-    <span class="badge-step" id="stepBadge">Configuraci&oacute;n</span>
-  </div>
-</div>
-<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: &#39;Montserrat&#39;, sans-serif; background: var(--off-white); color:
+var(--text); min-height: 100vh; }
 
-<div class="container">
-<div class="screen active" id="screen-setup">
-  <div class="setup-hero">
-    <div class="eyebrow">Comit&eacute; de Innovaci&oacute;n &middot; Priorizaci&oacute;n</div>
-    <h1>&iquest;En qu&eacute; retos<br>debemos trabajar?</h1>
-    <p>Configure los retos a evaluar y los miembros del comit&eacute;. Cada evaluador calificar&aacute; independientemente cada reto para obtener una priorizaci&oacute;n objetiva.</p>
-  </div>
-  <div class="form-grid">
-    <div class="form-section">
-      <h2><span class="icon">&#128101;</span> Evaluadores del comit&eacute;</h2>
-      <div class="mb-16">
-        <label>N&uacute;mero de evaluadores <small>(m&aacute;x. 5)</small></label>
-        <input type="number" id="numEvaluators" min="1" max="5" value="3" onchange="renderEvaluators()">
-      </div>
-      <div id="evaluators-list"></div>
-    </div>
-    <div class="form-section">
-      <h2><span class="icon">&#127919;</span> Retos a evaluar</h2>
-      <div id="retos-list"></div>
-      <button class="add-btn" onclick="addReto()">&#65291; Agregar reto</button>
-    </div>
-  </div>
-  <div class="action-bar">
-    <button class="btn btn-primary" onclick="startEvaluation()">Iniciar Evaluaci&oacute;n &rarr;</button>
-  </div>
-</div>
+.header {
+background: var(--navy);
+padding: 0 40px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+position: sticky;
+top: 0;
+z-index: 100;
+min-height: 68px;
+box-shadow: 0 2px 20px rgba(26,51,101,0.3);
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.plynn-logo { display: flex; align-items: center; gap: 10px; }
+.plynn-symbol { width: 36px; height: 36px; position: relative; flex-shrink: 0; }
+.plynn-wordmark {
+font-family: &#39;Montserrat&#39;, sans-serif;
+font-weight: 900;
+font-size: 1.5rem;
+color: white;
+letter-spacing: -0.02em;
+display: flex;
 
-<div class="screen" id="screen-evaluate">
-  <div class="flex-between mt-24" style="margin-bottom:20px;">
-    <div>
-      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);margin-bottom:4px;">Fase de Evaluaci&oacute;n</div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--teal);">Califique cada reto</div>
-    </div>
-    <button class="btn btn-secondary btn-sm" onclick="goBack()">&larr; Volver</button>
-  </div>
-  <div class="eval-tabs" id="evalTabs"></div>
-  <div class="challenge-nav" id="challengeNav"></div>
-  <div id="challengeArea"></div>
-  <div class="action-bar">
-    <button class="btn btn-secondary btn-sm" onclick="prevChallenge()" id="btnPrev">&larr; Reto anterior</button>
-    <button class="btn btn-gold" onclick="checkAndShowResults()" id="btnResults" style="display:none;">&#128202; Ver Resultados</button>
-    <button class="btn btn-primary btn-sm" onclick="nextChallenge()" id="btnNext">Siguiente reto &rarr;</button>
-  </div>
-</div>
+align-items: center;
+}
+.plynn-wordmark .yi-accent { color: var(--yellow); }
+.header-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.2); }
+.header-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing:
+0.18em; color: var(--cyan); font-weight: 600; margin-bottom: 2px; }
+.header-title { font-size: 0.95rem; font-weight: 700; color: white; }
+.badge-step {
+background: var(--cyan);
+color: var(--navy);
+font-weight: 700;
+border-radius: 20px;
+padding: 5px 16px;
+font-size: 0.75rem;
+letter-spacing: 0.05em;
+}
 
-<div class="screen" id="screen-results">
-  <div class="results-header">
-    <div class="eyebrow">Resultados de la evaluaci&oacute;n</div>
-    <h2>Mapa de Priorizaci&oacute;n</h2>
-  </div>
-  <div class="quadrant-wrap">
-    <h3>&#128205; Matriz Estrat&eacute;gico &times; Factible</h3>
-    <canvas id="quadrantChart"></canvas>
-  </div>
-  <div class="ranking-wrap">
-    <h3>&#127942; Ranking de Retos</h3>
-    <table class="rank-table" id="rankTable"></table>
-  </div>
-  <div class="eval-breakdown">
-    <h3>&#128101; Participaci&oacute;n del Comit&eacute;</h3>
-    <div class="eval-grid" id="evalBreakdown"></div>
-  </div>
-  <div class="action-bar">
-    <button class="btn btn-secondary" onclick="goBackToEval()">&larr; Volver a evaluar</button>
-    <button class="btn btn-primary" onclick="window.print()">&#128424; Imprimir resultados</button>
-    <button class="btn btn-gold" onclick="exportCSV()">&#11015; Exportar CSV</button>
-  </div>
-</div>
-</div>
+.progress-track { height: 3px; background: rgba(26,51,101,0.15); position: sticky;
+top: 68px; z-index: 99; }
+.progress-fill { height: 3px; background: linear-gradient(90deg, var(--cyan), var(--
+yellow)); transition: width 0.5s ease; width: 0%; }
 
-<script>
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+.setup-hero {
+
+background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%,
+#1a5a8a 100%);
+border-radius: 20px;
+padding: 52px 48px;
+margin-bottom: 32px;
+position: relative;
+overflow: hidden;
+}
+.setup-hero::before {
+content: &#39;&#39;;
+position: absolute;
+top: -40px; right: -40px;
+width: 200px; height: 200px;
+border-radius: 50%;
+background: rgba(15,186,227,0.08);
+}
+.setup-hero::after {
+content: &#39;&#39;;
+position: absolute;
+bottom: -60px; left: 40%;
+width: 300px; height: 300px;
+border-radius: 50%;
+background: rgba(255,187,0,0.05);
+}
+.setup-hero .eyebrow {
+font-size: 0.68rem;
+text-transform: uppercase;
+
+letter-spacing: 0.2em;
+color: var(--cyan);
+font-weight: 700;
+margin-bottom: 14px;
+}
+.setup-hero h1 {
+font-size: clamp(1.8rem, 4vw, 2.8rem);
+font-weight: 900;
+color: white;
+line-height: 1.1;
+margin-bottom: 14px;
+position: relative;
+}
+.setup-hero h1 .accent { color: var(--yellow); }
+.setup-hero p {
+font-size: 0.92rem;
+color: rgba(255,255,255,0.75);
+max-width: 520px;
+line-height: 1.7;
+font-weight: 400;
+position: relative;
+}
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-
+bottom: 28px; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+.form-section {
+background: white;
+border: 1.5px solid var(--border);
+border-radius: 16px;
+padding: 28px;
+box-shadow: 0 2px 12px var(--shadow);
+}
+.form-section h2 {
+font-size: 0.85rem;
+font-weight: 700;
+color: var(--navy);
+margin-bottom: 20px;
+padding-bottom: 12px;
+border-bottom: 2px solid var(--cyan-light);
+text-transform: uppercase;
+letter-spacing: 0.08em;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.form-section h2 .icon {
+width: 26px; height: 26px;
+background: var(--cyan-light);
+border-radius: 8px;
+display: flex; align-items: center; justify-content: center;
+font-size: 13px;
+}
+
+label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-mid);
+margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+input[type=&quot;text&quot;], input[type=&quot;number&quot;], input[type=&quot;date&quot;], select, textarea {
+width: 100%;
+padding: 10px 14px;
+border: 1.5px solid var(--border);
+border-radius: 10px;
+font-family: &#39;Montserrat&#39;, sans-serif;
+font-size: 0.88rem;
+background: var(--off-white);
+color: var(--text);
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+outline: none;
+border-color: var(--cyan);
+box-shadow: 0 0 0 3px rgba(15,186,227,0.12);
+background: white;
+}
+textarea { resize: vertical; min-height: 64px; }
+.mb-16 { margin-bottom: 16px; }
+
+.reto-entry {
+display: grid;
+grid-template-columns: auto 1fr auto;
+gap: 12px;
+
+align-items: start;
+margin-bottom: 12px;
+padding: 14px;
+background: var(--off-white);
+border: 1.5px solid var(--border);
+border-radius: 12px;
+transition: border-color 0.2s;
+}
+.reto-entry:hover { border-color: var(--cyan); }
+.reto-num {
+width: 30px; height: 30px;
+background: var(--navy);
+color: var(--cyan);
+border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-weight: 700; font-size: 0.8rem;
+flex-shrink: 0; margin-top: 6px;
+}
+.reto-fields { display: grid; gap: 8px; }
+.reto-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 500px) { .reto-row { grid-template-columns: 1fr; } }
+button.del-btn {
+background: none; border: 1.5px solid var(--border); border-radius: 8px;
+color: var(--red); cursor: pointer; padding: 5px 9px; font-size: 0.9rem;
+transition: all 0.15s; margin-top: 6px;
+}
+button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
+
+.btn {
+display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+padding: 12px 28px; border-radius: 12px; border: none; cursor: pointer;
+font-family: &#39;Montserrat&#39;, sans-serif; font-weight: 700; font-size: 0.85rem;
+letter-spacing: 0.03em; transition: all 0.18s;
+}
+.btn-primary { background: var(--navy); color: white; box-shadow: 0 4px 16px
+rgba(26,51,101,0.3); }
+.btn-primary:hover { background: var(--navy-dark); transform: translateY(-1px);
+box-shadow: 0 6px 20px rgba(26,51,101,0.4); }
+.btn-secondary { background: white; color: var(--navy); border: 1.5px solid var(--
+navy); }
+.btn-secondary:hover { background: var(--off-white); }
+.btn-cyan { background: var(--cyan); color: var(--navy); box-shadow: 0 4px 16px
+rgba(15,186,227,0.3); }
+.btn-cyan:hover { background: #0da8ce; transform: translateY(-1px); }
+.btn-yellow { background: var(--yellow); color: var(--navy); font-weight: 700; box-
+shadow: 0 4px 16px rgba(255,187,0,0.3); }
+.btn-yellow:hover { background: #e6a800; transform: translateY(-1px); }
+.btn-sm { padding: 8px 18px; font-size: 0.78rem; }
+.action-bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+margin-top: 32px; }
+
+.add-btn {
+background: white; border: 1.5px dashed var(--border); border-radius: 10px;
+color: var(--blue-grey); cursor: pointer; padding: 11px;
+font-family: &#39;Montserrat&#39;, sans-serif; font-size: 0.83rem; font-weight: 600;
+width: 100%; transition: all 0.15s; margin-top: 8px;
+
+}
+.add-btn:hover { border-color: var(--cyan); color: var(--navy); background: var(--
+cyan-pale); }
+
+.eval-tabs {
+display: flex; gap: 0;
+border: 1.5px solid var(--border); border-radius: 14px;
+overflow: hidden; margin-bottom: 28px; background: white;
+box-shadow: 0 2px 8px var(--shadow);
+}
+.eval-tab {
+flex: 1; padding: 13px 10px; text-align: center; cursor: pointer;
+font-size: 0.78rem; font-weight: 600; border-right: 1px solid var(--border);
+transition: all 0.15s; color: var(--text-mid);
+}
+.eval-tab:last-child { border-right: none; }
+.eval-tab.active { background: var(--navy); color: white; }
+.eval-tab .tab-name { font-weight: 700; font-size: 0.82rem; }
+.eval-tab .tab-status { font-size: 0.67rem; margin-top: 3px; opacity: 0.75; }
+
+.challenge-nav { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+.ch-pill {
+padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s;
+background: white;
+letter-spacing: 0.02em;
+}
+.ch-pill.active { background: var(--navy); border-color: var(--navy); color: white; }
+
+.ch-pill.done { background: var(--cyan-light); border-color: var(--cyan); color: var(--
+navy); }
+
+.challenge-card {
+background: white; border: 1.5px solid var(--border);
+border-radius: 18px; overflow: hidden;
+box-shadow: 0 4px 24px var(--shadow);
+}
+.ch-header {
+background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+padding: 24px 28px; display: flex; align-items: flex-start; gap: 16px;
+}
+.ch-num {
+background: var(--cyan); color: var(--navy);
+font-weight: 900; font-size: 1.2rem;
+border-radius: 10px; width: 40px; height: 40px;
+display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ch-title-block .ch-label { font-size: 0.65rem; text-transform: uppercase; letter-
+spacing: 0.15em; color: var(--cyan); margin-bottom: 5px; font-weight: 600; }
+.ch-title-block h3 { font-size: 1rem; color: white; line-height: 1.45; font-weight: 700;
+}
+.ch-tag { margin-left: auto; padding: 4px 12px; border-radius: 20px; font-size:
+0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; flex-
+shrink: 0; margin-top: 2px; }
+.ch-tag.problema { background: var(--red-light); color: var(--red); }
+.ch-tag.necesidad { background: var(--cyan-light); color: #0a7a9a; }
+.ch-tag.oportunidad { background: var(--yellow-light); color: #8a6000; }
+
+.criteria-section { padding: 24px 28px; }
+.axis-label {
+font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.16em; font-
+weight: 700;
+color: var(--cyan); display: flex; align-items: center; gap: 10px;
+margin-bottom: 14px; margin-top: 22px;
+}
+.axis-label:first-of-type { margin-top: 0; }
+.axis-label::after { content: &#39;&#39;; flex: 1; height: 1.5px; background: var(--cyan-light); }
+
+.criterion-row {
+display: grid; grid-template-columns: 1fr auto;
+gap: 16px; align-items: center;
+padding: 12px 0; border-bottom: 1px dashed var(--border);
+}
+.criterion-row:last-child { border-bottom: none; }
+.criterion-text { font-size: 0.85rem; color: var(--text); line-height: 1.55; font-weight:
+400; }
+
+.star-rating { display: flex; gap: 4px; flex-shrink: 0; }
+.star {
+width: 32px; height: 32px; border-radius: 8px;
+border: 1.5px solid var(--border); background: white;
+cursor: pointer; display: flex; align-items: center; justify-content: center;
+font-size: 0.8rem; font-weight: 700; transition: all 0.12s; color: var(--border);
+font-family: &#39;Montserrat&#39;, sans-serif;
+}
+
+.star.selected { background: var(--cyan); border-color: var(--cyan); color: var(--
+navy); }
+.star:hover { background: var(--cyan-light); border-color: var(--cyan); color: var(--
+navy); }
+
+.ch-score-bar {
+background: var(--off-white); padding: 16px 28px;
+display: flex; gap: 20px; align-items: center;
+border-top: 1.5px solid var(--border); flex-wrap: wrap;
+}
+.score-chip { text-align: center; }
+.score-chip .sc-val { font-size: 1.6rem; font-weight: 900; color: var(--navy); }
+.score-chip .sc-label { font-size: 0.62rem; text-transform: uppercase; letter-
+spacing: 0.1em; color: var(--blue-grey); font-weight: 600; }
+.score-divider { width: 1px; height: 36px; background: var(--border); }
+
+.results-header { padding: 40px 0 30px; margin-bottom: 32px; }
+.results-header .eyebrow { font-size: 0.65rem; text-transform: uppercase; letter-
+spacing: 0.2em; color: var(--cyan); margin-bottom: 10px; font-weight: 700; }
+.results-header h2 { font-size: 2rem; color: var(--navy); font-weight: 900; }
+
+.quadrant-wrap {
+background: white; border: 1.5px solid var(--border);
+border-radius: 18px; padding: 28px;
+box-shadow: 0 4px 24px var(--shadow); margin-bottom: 32px;
+}
+.quadrant-wrap h3 { font-size: 0.85rem; font-weight: 700; color: var(--navy);
+margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+#quadrantChart { width: 100%; aspect-ratio: 1/1; max-width: 520px; display: block;
+margin: 0 auto; }
+
+.ranking-wrap {
+background: white; border: 1.5px solid var(--border);
+border-radius: 18px; overflow: hidden;
+box-shadow: 0 4px 24px var(--shadow); margin-bottom: 32px;
+}
+.ranking-wrap h3 { font-size: 0.85rem; font-weight: 700; color: var(--navy);
+padding: 20px 24px; border-bottom: 1.5px solid var(--border); text-transform:
+uppercase; letter-spacing: 0.06em; }
+.rank-table { width: 100%; border-collapse: collapse; }
+.rank-table th { background: var(--off-white); color: var(--navy); font-size: 0.68rem;
+text-transform: uppercase; letter-spacing: 0.1em; padding: 11px 16px; text-align:
+left; border-bottom: 1.5px solid var(--border); font-weight: 700; }
+.rank-table td { padding: 13px 16px; border-bottom: 1px solid #eef2f7; font-size:
+0.87rem; }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-table tr:hover td { background: var(--off-white); }
+.rank-pos { font-weight: 900; font-size: 1.2rem; color: var(--navy); }
+.rank-medal { font-size: 1.3rem; }
+
+.score-bar-cell { display: flex; align-items: center; gap: 10px; }
+.bar-track { flex: 1; height: 7px; background: #eef2f7; border-radius: 4px; }
+.bar-fill { height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--
+cyan), var(--navy)); transition: width 0.6s ease; }
+.score-num { font-weight: 700; font-size: 0.85rem; min-width: 36px; text-align:
+right; color: var(--navy); }
+
+.tag-cell { padding: 3px 10px; border-radius: 12px; font-size: 0.68rem; font-weight:
+700; text-transform: uppercase; white-space: nowrap; display: inline-block; letter-
+spacing: 0.04em; }
+.priority-high { background: #e0f7e0; color: #1a6020; }
+.priority-mid { background: var(--yellow-light); color: #7a5500; }
+.priority-low { background: var(--red-light); color: var(--red); }
+
+.eval-breakdown { background: white; border: 1.5px solid var(--border); border-
+radius: 18px; padding: 24px; box-shadow: 0 4px 24px var(--shadow); margin-
+bottom: 32px; }
+.eval-breakdown h3 { font-size: 0.85rem; font-weight: 700; color: var(--navy);
+margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.06em; }
+.eval-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,
+1fr)); gap: 14px; }
+.eval-card { background: var(--off-white); border-radius: 12px; padding: 16px; text-
+align: center; border: 1px solid var(--border); }
+.eval-card .eval-name { font-weight: 700; color: var(--navy); margin-bottom: 4px;
+font-size: 0.85rem; }
+.eval-card .eval-stat { font-size: 2rem; font-weight: 900; color: var(--cyan); }
+.eval-card .eval-sub { font-size: 0.7rem; color: var(--text-mid); font-weight: 600; }
+
+.flex-between { display: flex; justify-content: space-between; align-items: center;
+flex-wrap: wrap; gap: 12px; }
+.mt-24 { margin-top: 24px; }
+
+@media print {
+.header, .progress-track, .eval-tabs, .challenge-nav, .action-bar, .btn { display:
+none !important; }
+.screen { display: block !important; }
+#screen-setup, #screen-evaluate { display: none !important; }
+
+}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div class=&quot;header&quot;&gt;
+&lt;div class=&quot;header-left&quot;&gt;
+&lt;div class=&quot;plynn-logo&quot;&gt;
+&lt;svg class=&quot;plynn-symbol&quot; viewBox=&quot;0 0 36 36&quot; fill=&quot;none&quot;
+xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;
+&lt;rect x=&quot;5&quot; y=&quot;10&quot; width=&quot;9&quot; height=&quot;20&quot; rx=&quot;4.5&quot; fill=&quot;#0FBAE3&quot;/&gt;
+&lt;rect x=&quot;18&quot; y=&quot;13&quot; width=&quot;9&quot; height=&quot;21&quot; rx=&quot;4.5&quot; fill=&quot;#FFBB00&quot;/&gt;
+&lt;circle cx=&quot;22.5&quot; cy=&quot;7&quot; r=&quot;4.5&quot; fill=&quot;#FFBB00&quot;/&gt;
+&lt;/svg&gt;
+&lt;span class=&quot;plynn-wordmark&quot;&gt;pl&lt;span class=&quot;yi-accent&quot;&gt;y&lt;/span&gt;nn&lt;/span&gt;
+&lt;/div&gt;
+&lt;div class=&quot;header-divider&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;header-title-block&quot;&gt;
+&lt;div class=&quot;header-label&quot;&gt;Plataforma de Innovación&lt;/div&gt;
+&lt;div class=&quot;header-title&quot;&gt;Evaluador de Retos&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;span class=&quot;badge-step&quot; id=&quot;stepBadge&quot;&gt;Configuración&lt;/span&gt;
+&lt;/div&gt;
+&lt;div class=&quot;progress-track&quot;&gt;&lt;div class=&quot;progress-fill&quot;
+id=&quot;progressFill&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;container&quot;&gt;
+
+&lt;!-- SETUP --&gt;
+&lt;div class=&quot;screen active&quot; id=&quot;screen-setup&quot;&gt;
+&lt;div class=&quot;setup-hero&quot;&gt;
+&lt;div class=&quot;eyebrow&quot;&gt;Comité de Innovación · Priorización&lt;/div&gt;
+&lt;h1&gt;¿En qué retos&lt;br&gt;debemos &lt;span class=&quot;accent&quot;&gt;trabajar?&lt;/span&gt;&lt;/h1&gt;
+&lt;p&gt;Configure los retos a evaluar y los miembros del comité. Cada evaluador
+calificará independientemente cada reto para obtener una priorización
+objetiva.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&quot;form-grid&quot; style=&quot;margin-bottom:20px;&quot;&gt;
+&lt;div class=&quot;form-section&quot;&gt;
+&lt;h2&gt;&lt;span class=&quot;icon&quot;&gt;��&lt;/span&gt; Empresa&lt;/h2&gt;
+&lt;input type=&quot;text&quot; id=&quot;sessionEmpresa&quot; placeholder=&quot;Ej: Plynn S.A.S.&quot;&gt;
+&lt;/div&gt;
+&lt;div class=&quot;form-section&quot;&gt;
+&lt;h2&gt;&lt;span class=&quot;icon&quot;&gt;��&lt;/span&gt; Fecha de priorización&lt;/h2&gt;
+&lt;input type=&quot;date&quot; id=&quot;sessionFecha&quot;&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;form-grid&quot;&gt;
+&lt;div class=&quot;form-section&quot;&gt;
+&lt;h2&gt;&lt;span class=&quot;icon&quot;&gt;��&lt;/span&gt; Evaluadores del comité&lt;/h2&gt;
+&lt;div class=&quot;mb-16&quot;&gt;
+&lt;label&gt;Número de evaluadores &lt;small style=&quot;font-weight:400;text-
+transform:none;&quot;&gt;(máx. 6)&lt;/small&gt;&lt;/label&gt;
+&lt;input type=&quot;number&quot; id=&quot;numEvaluators&quot; min=&quot;1&quot; max=&quot;6&quot; value=&quot;3&quot;
+onchange=&quot;renderEvaluators()&quot;&gt;
+
+&lt;/div&gt;
+&lt;div id=&quot;evaluators-list&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;form-section&quot;&gt;
+&lt;h2&gt;&lt;span class=&quot;icon&quot;&gt;��&lt;/span&gt; Retos a evaluar&lt;/h2&gt;
+&lt;div id=&quot;retos-list&quot;&gt;&lt;/div&gt;
+&lt;button class=&quot;add-btn&quot; onclick=&quot;addReto()&quot;&gt;＋ Agregar reto&lt;/button&gt;
+&lt;div style=&quot;font-size:0.7rem;color:var(--text-mid);margin-top:8px;text-
+align:center;&quot;&gt;Máximo 12 retos&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;action-bar&quot;&gt;
+&lt;button class=&quot;btn btn-primary&quot; onclick=&quot;startEvaluation()&quot;&gt;Iniciar Evaluación
+→&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- EVALUATE --&gt;
+&lt;div class=&quot;screen&quot; id=&quot;screen-evaluate&quot;&gt;
+&lt;div class=&quot;flex-between mt-24&quot; style=&quot;margin-bottom:20px;&quot;&gt;
+&lt;div&gt;
+&lt;div style=&quot;font-size:0.65rem;text-transform:uppercase;letter-
+spacing:0.16em;color:var(--cyan);margin-bottom:4px;font-weight:700;&quot;&gt;Fase de
+Evaluación&lt;/div&gt;
+&lt;div style=&quot;font-size:1.3rem;font-weight:900;color:var(--navy);&quot;&gt;Califique cada
+reto&lt;/div&gt;
+&lt;/div&gt;
+&lt;button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;goBack()&quot;&gt;←
+Volver&lt;/button&gt;
+
+&lt;/div&gt;
+&lt;div class=&quot;eval-tabs&quot; id=&quot;evalTabs&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;challenge-nav&quot; id=&quot;challengeNav&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;progressIndicator&quot; style=&quot;margin-
+bottom:16px;background:white;border:1.5px solid var(--border);border-
+radius:12px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-
+wrap:wrap;&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;challengeArea&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;action-bar&quot;&gt;
+&lt;button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;prevChallenge()&quot;
+id=&quot;btnPrev&quot;&gt;← Reto anterior&lt;/button&gt;
+&lt;button class=&quot;btn btn-yellow&quot; onclick=&quot;checkAndShowResults()&quot;
+id=&quot;btnResults&quot; style=&quot;display:none;&quot;&gt;�� Ver Resultados&lt;/button&gt;
+&lt;button class=&quot;btn btn-cyan btn-sm&quot; onclick=&quot;nextChallenge()&quot;
+id=&quot;btnNext&quot;&gt;Siguiente reto →&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- RESULTS --&gt;
+&lt;div class=&quot;screen&quot; id=&quot;screen-results&quot;&gt;
+&lt;div class=&quot;results-header&quot;&gt;
+&lt;div class=&quot;eyebrow&quot;&gt;Resultados de la evaluación&lt;/div&gt;
+&lt;h2&gt;Mapa de Priorización&lt;/h2&gt;
+&lt;div id=&quot;resultsMetadata&quot; style=&quot;margin-top:10px;font-size:0.82rem;color:var(--
+text-mid);font-weight:600;&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;quadrant-wrap&quot;&gt;
+&lt;h3&gt;�� Matriz Estratégico × Factible&lt;/h3&gt;
+&lt;canvas id=&quot;quadrantChart&quot;&gt;&lt;/canvas&gt;
+
+&lt;/div&gt;
+&lt;div class=&quot;ranking-wrap&quot;&gt;
+&lt;h3&gt;�� Ranking de Retos&lt;/h3&gt;
+&lt;table class=&quot;rank-table&quot; id=&quot;rankTable&quot;&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;div class=&quot;eval-breakdown&quot;&gt;
+&lt;h3&gt;�� Participación del Comité&lt;/h3&gt;
+&lt;div class=&quot;eval-grid&quot; id=&quot;evalBreakdown&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;action-bar&quot;&gt;
+&lt;button class=&quot;btn btn-secondary&quot; onclick=&quot;goBackToEval()&quot;&gt;← Volver a
+evaluar&lt;/button&gt;
+&lt;button class=&quot;btn btn-primary&quot; onclick=&quot;printResults()&quot;&gt;��
+
+Imprimir&lt;/button&gt;
+&lt;button class=&quot;btn btn-cyan&quot; onclick=&quot;exportCSV()&quot;&gt;⬇ Exportar CSV&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;/div&gt;
+
+&lt;script&gt;
 const CRITERIA = [
-  { id:'c1', axis:'FACTIBLE', weight: 0.2, text:'\u00bfLa empresa cuenta con los recursos humanos para trabajar en este Reto? (1 = no cuenta con los recursos, 5 = s\u00ed cuenta con todos los recursos)' },
-  { id:'c2', axis:'FACTIBLE', weight: 0.4, text:'\u00bfLa empresa cuenta con los recursos financieros para una posible soluci\u00f3n para este Reto? (1 = no cuenta con los recursos, 5 = s\u00ed cuenta con todos los recursos)' },
-  { id:'c3', axis:'FACTIBLE', weight: 0.2, text:'\u00bfLa empresa cuenta con el conocimiento para trabajar en este Reto? (1 = no cuenta con el conocimiento, 5 = s\u00ed cuenta con el conocimiento)' },
-  { id:'c4', axis:'FACTIBLE', weight: 0.2, text:'\u00bfLa empresa cuenta con los espacios f\u00edsicos y/o la maquinaria y/o la tecnolog\u00eda necesarios para trabajar en una posible soluci\u00f3n a este Reto? (1 = no cuenta, 5 = s\u00ed cuenta)' },
-  { id:'c5', axis:'ESTRAT\u00c9GICO', weight: 0.35, text:'\u00bfEste Reto est\u00e1 alineado con la estrategia de innovaci\u00f3n definida por la empresa? (1 = no est\u00e1 alineado, 5 = s\u00ed est\u00e1 alineado)' },
-  { id:'c6', axis:'ESTRAT\u00c9GICO', weight: 0.15, text:'\u00bfLa posible soluci\u00f3n a este Reto puede generar aumento de ingresos o reducci\u00f3n de costos? (1 = no genera, 5 = s\u00ed genera)' },
-  { id:'c7', axis:'ESTRAT\u00c9GICO', weight: 0.35, text:'\u00bfEl tiempo hasta que la posible soluci\u00f3n pueda ser implementada es poco tiempo? Victoria temprana. (1 = mucho tiempo, 5 = poco tiempo)' },
-  { id:'c8', axis:'ESTRAT\u00c9GICO', weight: 0.15, text:'\u00bfTrabajar en este Reto puede crear un impacto positivo al medio ambiente y/o a la sociedad que le d\u00e9 una buena imagen a la empresa? (1 = no genera impacto, 5 = s\u00ed genera impactos positivos)' }
+{ id:&#39;c1&#39;, axis:&#39;FACTIBLE&#39;, weight:0.2, text:&#39;¿La empresa cuenta con los recursos
+humanos para trabajar en este Reto? (1 = no cuenta con los recursos, 5 = sí
+cuenta con todos los recursos)&#39; },
+{ id:&#39;c2&#39;, axis:&#39;FACTIBLE&#39;, weight:0.4, text:&#39;¿La empresa cuenta con los recursos
+financieros para una posible solución para este Reto? (1 = no cuenta con los
+recursos, 5 = sí cuenta con todos los recursos)&#39; },
+{ id:&#39;c3&#39;, axis:&#39;FACTIBLE&#39;, weight:0.2, text:&#39;¿La empresa cuenta con el
+conocimiento para trabajar en este Reto? (1 = no cuenta con el conocimiento, 5 =
+sí cuenta con el conocimiento)&#39; },
+{ id:&#39;c4&#39;, axis:&#39;FACTIBLE&#39;, weight:0.2, text:&#39;¿La empresa cuenta con los espacios
+físicos y/o la maquinaria y/o la tecnología necesarios para trabajar en una posible
+solución a este Reto? (1 = no cuenta, 5 = sí cuenta)&#39; },
+{ id:&#39;c5&#39;, axis:&#39;ESTRATÉGICO&#39;, weight:0.35, text:&#39;¿Este Reto está alineado con la
+estrategia de innovación definida por la empresa? (1 = no está alineado, 5 = sí
+está alineado)&#39; },
+{ id:&#39;c6&#39;, axis:&#39;ESTRATÉGICO&#39;, weight:0.15, text:&#39;¿La posible solución a este Reto
+puede generar aumento de ingresos o reducción de costos? (1 = no genera, 5 = sí
+genera)&#39; },
+{ id:&#39;c7&#39;, axis:&#39;ESTRATÉGICO&#39;, weight:0.35, text:&#39;¿El tiempo hasta que la posible
+solución pueda ser implementada es poco tiempo? Victoria temprana. (1 = mucho
+tiempo, 5 = poco tiempo)&#39; },
+
+{ id:&#39;c8&#39;, axis:&#39;ESTRATÉGICO&#39;, weight:0.15, text:&#39;¿Trabajar en este Reto puede
+crear un impacto positivo al medio ambiente y/o a la sociedad? (1 = no genera
+impacto, 5 = sí genera impactos positivos)&#39; }
 ];
 
-let state = { evaluators: [], challenges: [], scores: {}, currentEval: 0, currentChallenge: 0 };
+let state = { evaluators:[], challenges:[], scores:{}, currentEval:0,
+currentChallenge:0, empresa:&#39;&#39;, fecha:&#39;&#39; };
 
 function renderEvaluators() {
-  const n = Math.max(1, Math.min(5, parseInt(document.getElementById('numEvaluators').value) || 1));
-  document.getElementById('numEvaluators').value = n;
-  const container = document.getElementById('evaluators-list');
-  container.innerHTML = '';
-  for (let i = 0; i < n; i++) {
-    const prev = state.evaluators[i] || {};
-    container.innerHTML += `<div class="mb-16"><label>Nombre del evaluador ${i+1}</label><input type="text" id="evalName${i}" value="${prev.name||''}" placeholder="Ej: Mar\u00eda Garc\u00eda"></div>`;
-  }
+const n = Math.max(1, Math.min(6,
+parseInt(document.getElementById(&#39;numEvaluators&#39;).value)||1));
+document.getElementById(&#39;numEvaluators&#39;).value = n;
+const container = document.getElementById(&#39;evaluators-list&#39;);
+container.innerHTML = &#39;&#39;;
+for (let i=0; i&lt;n; i++) {
+const prev = state.evaluators[i]||{};
+container.innerHTML += `&lt;div class=&quot;mb-16&quot;&gt;&lt;label&gt;Nombre del evaluador
+${i+1}&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;evalName${i}&quot; value=&quot;${prev.name||&#39;&#39;}&quot;
+placeholder=&quot;Ej: María García&quot;&gt;&lt;/div&gt;`;
+}
 }
 
 let retoIdCounter = 0;
-function addReto(title='', type='Problema') {
-  const id = ++retoIdCounter;
-  const container = document.getElementById('retos-list');
-  const idx = container.children.length + 1;
-  const div = document.createElement('div');
-  div.className = 'reto-entry';
-  div.id = `reto-entry-${id}`;
-  div.innerHTML = `
-    <div class="reto-num">${idx}</div>
-    <div class="reto-fields">
-      <textarea id="reto-title-${id}" placeholder="Describe el reto de innovaci\u00f3n..." rows="2">${title}</textarea>
-      <div class="reto-row">
-        <div><label>Tipo</label>
-          <select id="reto-type-${id}">
-            <option ${type==='Problema'?'selected':''}>Problema</option>
-            <option ${type==='Necesidad'?'selected':''}>Necesidad</option>
-            <option ${type==='Oportunidad'?'selected':''}>Oportunidad</option>
-          </select>
-        </div>
-        <div><label>Nombre corto</label>
-          <input type="text" id="reto-short-${id}" placeholder="Ej: Reto 1" value="Reto ${idx}">
-        </div>
-      </div>
-    </div>
-    <button class="del-btn" onclick="removeReto(${id})">\u2715</button>`;
-  container.appendChild(div);
-  renumberRetos();
+function addReto(title=&#39;&#39;, type=&#39;Problema&#39;, shortVal=&#39;&#39;) {
+const existing = document.querySelectorAll(&#39;.reto-entry&#39;).length;
+if (existing &gt;= 12) { alert(&#39;Máximo 12 retos permitidos.&#39;); return; }
+const id = ++retoIdCounter;
+const container = document.getElementById(&#39;retos-list&#39;);
+const idx = existing + 1;
+
+const div = document.createElement(&#39;div&#39;);
+div.className = &#39;reto-entry&#39;;
+div.id = `reto-entry-${id}`;
+div.innerHTML = `
+&lt;div class=&quot;reto-num&quot;&gt;${idx}&lt;/div&gt;
+&lt;div class=&quot;reto-fields&quot;&gt;
+&lt;textarea id=&quot;reto-title-${id}&quot; placeholder=&quot;Describe el reto de innovación...&quot;
+rows=&quot;2&quot;&gt;${title}&lt;/textarea&gt;
+&lt;div class=&quot;reto-row&quot;&gt;
+&lt;div&gt;&lt;label&gt;Tipo&lt;/label&gt;
+&lt;select id=&quot;reto-type-${id}&quot;&gt;
+&lt;option ${type===&#39;Problema&#39;?&#39;selected&#39;:&#39;&#39;}&gt;Problema&lt;/option&gt;
+&lt;option ${type===&#39;Necesidad&#39;?&#39;selected&#39;:&#39;&#39;}&gt;Necesidad&lt;/option&gt;
+&lt;option ${type===&#39;Oportunidad&#39;?&#39;selected&#39;:&#39;&#39;}&gt;Oportunidad&lt;/option&gt;
+&lt;/select&gt;
+&lt;/div&gt;
+&lt;div&gt;&lt;label&gt;Nombre corto&lt;/label&gt;
+&lt;input type=&quot;text&quot; id=&quot;reto-short-${id}&quot; placeholder=&quot;Ej: Reto 1&quot;
+value=&quot;${shortVal||&#39;Reto &#39;+idx}&quot;&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;button class=&quot;del-btn&quot; onclick=&quot;removeReto(${id})&quot;&gt;✕
+&lt;/button&gt;`;
+
+container.appendChild(div);
+renumberRetos();
 }
 
-function removeReto(id) { document.getElementById(`reto-entry-${id}`).remove(); renumberRetos(); }
-function renumberRetos() { document.querySelectorAll('.reto-entry').forEach((el, i) => { el.querySelector('.reto-num').textContent = i + 1; }); }
+function removeReto(id) { document.getElementById(`reto-entry-${id}`).remove();
+renumberRetos(); }
+function renumberRetos() { document.querySelectorAll(&#39;.reto-
+entry&#39;).forEach((el,i)=&gt;{ el.querySelector(&#39;.reto-num&#39;).textContent = i+1; }); }
 
 function collectSetup() {
-  const n = parseInt(document.getElementById('numEvaluators').value);
-  state.evaluators = [];
-  for (let i = 0; i < n; i++) {
-    const name = (document.getElementById(`evalName${i}`)?.value || '').trim() || `Evaluador ${i+1}`;
-    state.evaluators.push({ name });
-  }
-  state.challenges = [];
-  document.querySelectorAll('.reto-entry').forEach(el => {
-    const idMatch = el.id.match(/reto-entry-(\d+)/);
-    if (!idMatch) return;
-    const id = idMatch[1];
-    const title = document.getElementById(`reto-title-${id}`)?.value.trim();
-    const type = document.getElementById(`reto-type-${id}`)?.value;
-    const shortName = document.getElementById(`reto-short-${id}`)?.value.trim();
-    if (title) state.challenges.push({ title, type, shortName: shortName || `Reto ${state.challenges.length+1}` });
-  });
-  state.scores = {};
-  state.evaluators.forEach((_, ei) => { state.scores[ei] = {}; state.challenges.forEach((_, ci) => { state.scores[ei][ci] = {}; }); });
+state.empresa = (document.getElementById(&#39;sessionEmpresa&#39;)?.value||&#39;&#39;).trim() ||
+&#39;Sin especificar&#39;;
+state.fecha = document.getElementById(&#39;sessionFecha&#39;)?.value || &#39;&#39;;
+const n = parseInt(document.getElementById(&#39;numEvaluators&#39;).value);
+state.evaluators = [];
+for (let i=0; i&lt;n; i++) {
+const name =
+(document.getElementById(`evalName${i}`)?.value||&#39;&#39;).trim()||`Evaluador ${i+1}`;
+state.evaluators.push({ name });
+}
+state.challenges = [];
+document.querySelectorAll(&#39;.reto-entry&#39;).forEach(el=&gt;{
+const idMatch = el.id.match(/reto-entry-(\d+)/);
+if (!idMatch) return;
+const id = idMatch[1];
+const title = document.getElementById(`reto-title-${id}`)?.value.trim();
+const type = document.getElementById(`reto-type-${id}`)?.value;
+const shortName = document.getElementById(`reto-short-${id}`)?.value.trim();
+
+if (title) state.challenges.push({ title, type, shortName: shortName||`Reto
+${state.challenges.length+1}` });
+});
+state.scores = {};
+state.evaluators.forEach((_,ei)=&gt;{ state.scores[ei]={};
+state.challenges.forEach((_,ci)=&gt;{ state.scores[ei][ci]={}; }); });
 }
 
 function startEvaluation() {
-  collectSetup();
-  if (!state.challenges.length) { alert('Agrega al menos un reto.'); return; }
-  state.currentEval = 0; state.currentChallenge = 0;
-  showScreen('screen-evaluate'); renderEvalScreen();
+collectSetup();
+if (!state.challenges.length) { alert(&#39;Agrega al menos un reto.&#39;); return; }
+state.currentEval=0; state.currentChallenge=0;
+showScreen(&#39;screen-evaluate&#39;); renderEvalScreen();
 }
 
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  const steps = { 'screen-setup': ['Configuraci\u00f3n', 10], 'screen-evaluate': ['Evaluaci\u00f3n', 55], 'screen-results': ['Resultados', 100] };
-  const [label, pct] = steps[id];
-  document.getElementById('stepBadge').textContent = label;
-  document.getElementById('progressFill').style.width = pct + '%';
-  window.scrollTo(0,0);
+document.querySelectorAll(&#39;.screen&#39;).forEach(s=&gt;s.classList.remove(&#39;active&#39;));
+document.getElementById(id).classList.add(&#39;active&#39;);
+const steps = { &#39;screen-setup&#39;:[&#39;Configuración&#39;,8], &#39;screen-
+evaluate&#39;:[&#39;Evaluación&#39;,55], &#39;screen-results&#39;:[&#39;Resultados&#39;,100] };
+const [label,pct] = steps[id];
+document.getElementById(&#39;stepBadge&#39;).textContent = label;
+document.getElementById(&#39;progressFill&#39;).style.width = pct+&#39;%&#39;;
+window.scrollTo(0,0);
 }
 
-function renderEvalScreen() { renderEvalTabs(); renderChallengePills(); renderChallengeCard(); updateNavButtons(); }
+function renderProgressIndicator() {
+const el = document.getElementById(&#39;progressIndicator&#39;);
+
+if (!el) return;
+const totalCriteria = state.evaluators.length * state.challenges.length * 8;
+let done = 0;
+state.evaluators.forEach((_,ei) =&gt; state.challenges.forEach((_,ci) =&gt;
+CRITERIA.forEach(cr =&gt; { if (state.scores[ei]?.[ci]?.[cr.id]) done++; })));
+const pct = totalCriteria ? Math.round(done/totalCriteria*100) : 0;
+const allDone = done === totalCriteria;
+el.innerHTML = `
+&lt;div style=&quot;flex:1;min-width:160px;&quot;&gt;
+&lt;div style=&quot;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-
+spacing:0.1em;color:var(--text-mid);margin-bottom:6px;&quot;&gt;Progreso general del
+comité&lt;/div&gt;
+&lt;div style=&quot;background:var(--off-white);border-
+radius:6px;height:8px;overflow:hidden;border:1px solid var(--border);&quot;&gt;
+&lt;div style=&quot;height:8px;border-radius:6px;background:linear-
+gradient(90deg,var(--cyan),var(--navy));width:${pct}%;transition:width 0.4s
+ease;&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div style=&quot;font-size:1.4rem;font-weight:900;color:var(--navy);min-
+width:48px;text-align:right;&quot;&gt;${pct}%&lt;/div&gt;
+&lt;div style=&quot;font-size:0.78rem;color:var(--text-mid);font-
+weight:600;&quot;&gt;${done}/${totalCriteria} criterios&lt;/div&gt;
+${allDone ? &#39;&lt;div style=&quot;background:var(--cyan-light);color:var(--navy);font-
+size:0.75rem;font-weight:700;padding:5px 12px;border-radius:20px;border:1px
+solid var(--cyan);&quot;&gt;✓ ¡Completo! Ver resultados →&lt;/div&gt;&#39; : &#39;&#39;}
+`;
+}
+
+function renderEvalScreen() { renderEvalTabs(); renderChallengePills();
+renderChallengeCard(); updateNavButtons(); renderProgressIndicator(); }
 
 function renderEvalTabs() {
-  document.getElementById('evalTabs').innerHTML = state.evaluators.map((ev, i) => {
-    const done = countDoneForEval(i); const total = state.challenges.length * 8;
-    const pct = total ? Math.round(done/total*100) : 0;
-    return `<div class="eval-tab ${i===state.currentEval?'active':''}" onclick="switchEval(${i})"><div class="tab-name">${ev.name}</div><div class="tab-status">${pct}% completado</div></div>`;
-  }).join('');
+document.getElementById(&#39;evalTabs&#39;).innerHTML =
+state.evaluators.map((ev,i)=&gt;{
+const done = countDoneForEval(i), total = state.challenges.length*8;
+const pct = total ? Math.round(done/total*100) : 0;
+return `&lt;div class=&quot;eval-tab ${i===state.currentEval?&#39;active&#39;:&#39;&#39;}&quot;
+onclick=&quot;switchEval(${i})&quot;&gt;&lt;div class=&quot;tab-name&quot;&gt;${ev.name}&lt;/div&gt;&lt;div
+class=&quot;tab-status&quot;&gt;${pct}% completado&lt;/div&gt;&lt;/div&gt;`;
+}).join(&#39;&#39;);
 }
 
 function countDoneForEval(ei) {
-  let c = 0;
-  state.challenges.forEach((_, ci) => { CRITERIA.forEach(cr => { if (state.scores[ei]?.[ci]?.[cr.id]) c++; }); });
-  return c;
+let c=0;
+state.challenges.forEach((_,ci)=&gt;{ CRITERIA.forEach(cr=&gt;{ if
+(state.scores[ei]?.[ci]?.[cr.id]) c++; }); });
+return c;
 }
 
 function renderChallengePills() {
-  document.getElementById('challengeNav').innerHTML = state.challenges.map((ch, i) => {
-    const done = CRITERIA.every(cr => state.scores[state.currentEval]?.[i]?.[cr.id]);
-    return `<div class="ch-pill ${i===state.currentChallenge?'active':''} ${done?'done':''}" onclick="goToChallenge(${i})">${ch.shortName}</div>`;
-  }).join('');
+document.getElementById(&#39;challengeNav&#39;).innerHTML =
+state.challenges.map((ch,i)=&gt;{
+const done = CRITERIA.every(cr=&gt;state.scores[state.currentEval]?.[i]?.[cr.id]);
+return `&lt;div class=&quot;ch-pill ${i===state.currentChallenge?&#39;active&#39;:&#39;&#39;}
+${done?&#39;done&#39;:&#39;&#39;}&quot; onclick=&quot;goToChallenge(${i})&quot;&gt;${ch.shortName}&lt;/div&gt;`;
+}).join(&#39;&#39;);
 }
 
 function renderChallengeCard() {
-  const ei = state.currentEval, ci = state.currentChallenge, ch = state.challenges[ci];
-  if (!ch) return;
-  const renderCriteria = (criteria) => criteria.map(cr => {
-    const val = state.scores[ei]?.[ci]?.[cr.id] || 0;
-    const stars = [1,2,3,4,5].map(v => `<div class="star ${val>=v?'selected':''}" onclick="setScore(${ei},${ci},'${cr.id}',${v})" title="${v}">${v}</div>`).join('');
-    return `<div class="criterion-row"><div class="criterion-text">${cr.text}</div><div class="star-rating">${stars}</div></div>`;
-  }).join('');
-  const scores = computeScores(ei, ci);
-  document.getElementById('challengeArea').innerHTML = `
-    <div class="challenge-card">
-      <div class="ch-header">
-        <div class="ch-num">${ci+1}</div>
-        <div class="ch-title-block"><div class="ch-label">Reto ${ci+1} \u00b7 ${ch.shortName}</div><h3>${ch.title}</h3></div>
-        <span class="ch-tag ${ch.type.toLowerCase()}">${ch.type}</span>
-      </div>
-      <div class="criteria-section">
-        <div class="axis-label">Factibilidad</div>${renderCriteria(CRITERIA.filter(c=>c.axis==='FACTIBLE'))}
-        <div class="axis-label">Alineaci\u00f3n Estrat\u00e9gica</div>${renderCriteria(CRITERIA.filter(c=>c.axis==='ESTRAT\u00c9GICO'))}
-      </div>
-      <div class="ch-score-bar">
-        <div class="score-chip"><div class="sc-val">${scores.factible}</div><div class="sc-label">Factible</div></div>
-        <div class="score-divider"></div>
-        <div class="score-chip"><div class="sc-val">${scores.estrategico}</div><div class="sc-label">Estrat\u00e9gico</div></div>
-        <div class="score-divider"></div>
-        <div class="score-chip"><div class="sc-val">${scores.total}</div><div class="sc-label">Total</div></div>
-        <div style="margin-left:auto;font-size:0.8rem;color:#666;">Calificador: <strong>${state.evaluators[ei].name}</strong></div>
-      </div>
-    </div>`;
+
+const ei=state.currentEval, ci=state.currentChallenge, ch=state.challenges[ci];
+if (!ch) return;
+const renderCriteria = (criteria) =&gt; criteria.map(cr=&gt;{
+const val = state.scores[ei]?.[ci]?.[cr.id]||0;
+const stars = [1,2,3,4,5].map(v=&gt;`&lt;div class=&quot;star ${val&gt;=v?&#39;selected&#39;:&#39;&#39;}&quot;
+onclick=&quot;setScore(${ei},${ci},&#39;${cr.id}&#39;,${v})&quot;&gt;${v}&lt;/div&gt;`).join(&#39;&#39;);
+return `&lt;div class=&quot;criterion-row&quot;&gt;&lt;div class=&quot;criterion-text&quot;&gt;${cr.text}&lt;/div&gt;&lt;div
+class=&quot;star-rating&quot;&gt;${stars}&lt;/div&gt;&lt;/div&gt;`;
+}).join(&#39;&#39;);
+const scores = computeScores(ei,ci);
+document.getElementById(&#39;challengeArea&#39;).innerHTML = `
+&lt;div class=&quot;challenge-card&quot;&gt;
+&lt;div class=&quot;ch-header&quot;&gt;
+&lt;div class=&quot;ch-num&quot;&gt;${ci+1}&lt;/div&gt;
+&lt;div class=&quot;ch-title-block&quot;&gt;&lt;div class=&quot;ch-label&quot;&gt;Reto ${ci+1} ·
+${ch.shortName}&lt;/div&gt;&lt;h3&gt;${ch.title}&lt;/h3&gt;&lt;/div&gt;
+&lt;span class=&quot;ch-tag ${ch.type.toLowerCase()}&quot;&gt;${ch.type}&lt;/span&gt;
+&lt;/div&gt;
+&lt;div class=&quot;criteria-section&quot;&gt;
+&lt;div class=&quot;axis-
+label&quot;&gt;Factibilidad&lt;/div&gt;${renderCriteria(CRITERIA.filter(c=&gt;c.axis===&#39;FACTIBLE&#39;)
+)}
+&lt;div class=&quot;axis-label&quot;&gt;Alineación
+Estratégica&lt;/div&gt;${renderCriteria(CRITERIA.filter(c=&gt;c.axis===&#39;ESTRATÉGICO&#39;))}
+&lt;/div&gt;
+&lt;div class=&quot;ch-score-bar&quot;&gt;
+&lt;div class=&quot;score-chip&quot;&gt;&lt;div class=&quot;sc-val&quot;&gt;${scores.factible}&lt;/div&gt;&lt;div
+class=&quot;sc-label&quot;&gt;Factible&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;score-divider&quot;&gt;&lt;/div&gt;
+
+&lt;div class=&quot;score-chip&quot;&gt;&lt;div class=&quot;sc-val&quot;&gt;${scores.estrategico}&lt;/div&gt;&lt;div
+class=&quot;sc-label&quot;&gt;Estratégico&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;score-divider&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;score-chip&quot;&gt;&lt;div class=&quot;sc-val&quot;&gt;${scores.total}&lt;/div&gt;&lt;div
+class=&quot;sc-label&quot;&gt;Total&lt;/div&gt;&lt;/div&gt;
+&lt;div style=&quot;margin-left:auto;font-size:0.78rem;color:var(--text-mid);font-
+weight:600;&quot;&gt;Calificador: &lt;strong style=&quot;color:var(--
+navy);&quot;&gt;${state.evaluators[ei].name}&lt;/strong&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;`;
 }
 
-function computeScores(ei, ci) {
-  const sc = state.scores[ei]?.[ci] || {};
-  const factW = { c1:0.2, c2:0.4, c3:0.2, c4:0.2 }, stratW = { c5:0.35, c6:0.15, c7:0.35, c8:0.15 };
-  let f=0, s=0;
-  Object.entries(factW).forEach(([k,w]) => f += (sc[k]||0)*w);
-  Object.entries(stratW).forEach(([k,w]) => s += (sc[k]||0)*w);
-  return { factible: f.toFixed(1), estrategico: s.toFixed(1), total: ((f+s)/2).toFixed(1) };
+function computeScores(ei,ci) {
+const sc = state.scores[ei]?.[ci]||{};
+const factW={c1:0.2,c2:0.4,c3:0.2,c4:0.2},
+stratW={c5:0.35,c6:0.15,c7:0.35,c8:0.15};
+let f=0, s=0;
+Object.entries(factW).forEach(([k,w])=&gt;f+=(sc[k]||0)*w);
+Object.entries(stratW).forEach(([k,w])=&gt;s+=(sc[k]||0)*w);
+return { factible:f.toFixed(1), estrategico:s.toFixed(1), total:((f+s)/2).toFixed(1) };
 }
 
-function setScore(ei, ci, cid, val) { state.scores[ei][ci][cid] = val; renderChallengeCard(); renderChallengePills(); renderEvalTabs(); updateNavButtons(); }
-function switchEval(idx) { state.currentEval = idx; state.currentChallenge = 0; renderEvalScreen(); }
-function goToChallenge(idx) { state.currentChallenge = idx; renderChallengeCard(); renderChallengePills(); updateNavButtons(); }
+function setScore(ei,ci,cid,val) { state.scores[ei][ci][cid]=val;
+renderChallengeCard(); renderChallengePills(); renderEvalTabs();
+updateNavButtons(); renderProgressIndicator(); }
+function switchEval(idx) { state.currentEval=idx; state.currentChallenge=0;
+renderEvalScreen(); }
+function goToChallenge(idx) { state.currentChallenge=idx; renderChallengeCard();
+renderChallengePills(); updateNavButtons(); }
 
 function nextChallenge() {
-  if (state.currentChallenge < state.challenges.length - 1) { state.currentChallenge++; renderChallengeCard(); renderChallengePills(); updateNavButtons(); window.scrollTo(0,0); }
+if (state.currentChallenge &lt; state.challenges.length-1) { state.currentChallenge++;
+renderChallengeCard(); renderChallengePills(); updateNavButtons();
+window.scrollTo(0,0); }
 }
 function prevChallenge() {
-  if (state.currentChallenge > 0) { state.currentChallenge--; renderChallengeCard(); renderChallengePills(); updateNavButtons(); window.scrollTo(0,0); }
+if (state.currentChallenge &gt; 0) { state.currentChallenge--; renderChallengeCard();
+renderChallengePills(); updateNavButtons(); window.scrollTo(0,0); }
 }
 
 function updateNavButtons() {
-  const ci = state.currentChallenge, total = state.challenges.length;
-  document.getElementById('btnPrev').style.display = ci === 0 ? 'none' : 'inline-flex';
-  document.getElementById('btnNext').style.display = ci === total - 1 ? 'none' : 'inline-flex';
-  const allDone = state.evaluators.every((_, ei) => state.challenges.every((_, chi) => CRITERIA.every(cr => state.scores[ei]?.[chi]?.[cr.id])));
-  document.getElementById('btnResults').style.display = allDone ? 'inline-flex' : 'none';
+const ci=state.currentChallenge, total=state.challenges.length;
+document.getElementById(&#39;btnPrev&#39;).style.display = ci===0?&#39;none&#39;:&#39;inline-flex&#39;;
+document.getElementById(&#39;btnNext&#39;).style.display = ci===total-1?&#39;none&#39;:&#39;inline-
+flex&#39;;
+const allDone =
+state.evaluators.every((_,ei)=&gt;state.challenges.every((_,chi)=&gt;CRITERIA.every(cr
+=&gt;state.scores[ei]?.[chi]?.[cr.id])));
+document.getElementById(&#39;btnResults&#39;).style.display = allDone?&#39;inline-flex&#39;:&#39;none&#39;;
 }
 
 function checkAndShowResults() { showResults(); }
-function goBack() { showScreen('screen-setup'); }
-function goBackToEval() { showScreen('screen-evaluate'); renderEvalScreen(); }
+function goBack() { showScreen(&#39;screen-setup&#39;); }
+function goBackToEval() { showScreen(&#39;screen-evaluate&#39;); renderEvalScreen(); }
 
 function computeAggregateScores() {
-  return state.challenges.map((ch, ci) => {
-    const factW = { c1:0.2, c2:0.4, c3:0.2, c4:0.2 }, stratW = { c5:0.35, c6:0.15, c7:0.35, c8:0.15 };
-    let sumF=0, sumS=0;
-    state.evaluators.forEach((_, ei) => {
-      const sc = state.scores[ei]?.[ci] || {};
-      let f=0, s=0;
-      Object.entries(factW).forEach(([k,w]) => f += (sc[k]||0)*w);
-      Object.entries(stratW).forEach(([k,w]) => s += (sc[k]||0)*w);
-      sumF += f; sumS += s;
-    });
-    const avgF = sumF / state.evaluators.length, avgS = sumS / state.evaluators.length;
-    return { ch, ci, avgF, avgS, total: (avgF + avgS) / 2 };
-  });
+return state.challenges.map((ch,ci)=&gt;{
+const factW={c1:0.2,c2:0.4,c3:0.2,c4:0.2},
+stratW={c5:0.35,c6:0.15,c7:0.35,c8:0.15};
+
+let sumF=0,sumS=0;
+state.evaluators.forEach((_,ei)=&gt;{
+const sc=state.scores[ei]?.[ci]||{};
+let f=0,s=0;
+Object.entries(factW).forEach(([k,w])=&gt;f+=(sc[k]||0)*w);
+Object.entries(stratW).forEach(([k,w])=&gt;s+=(sc[k]||0)*w);
+sumF+=f; sumS+=s;
+});
+const avgF=sumF/state.evaluators.length, avgS=sumS/state.evaluators.length;
+return { ch, ci, avgF, avgS, total:(avgF+avgS)/2 };
+});
 }
 
 function showResults() {
-  const data = computeAggregateScores();
-  data.sort((a,b) => b.total - a.total);
-  showScreen('screen-results');
-  renderQuadrant(data); renderRanking(data); renderEvalBreakdown();
+const data = computeAggregateScores();
+data.sort((a,b)=&gt;b.total-a.total);
+showScreen(&#39;screen-results&#39;);
+const meta = document.getElementById(&#39;resultsMetadata&#39;);
+if (meta) {
+const fechaStr = state.fecha ? new
+Date(state.fecha+&#39;T12:00:00&#39;).toLocaleDateString(&#39;es-
+CO&#39;,{year:&#39;numeric&#39;,month:&#39;long&#39;,day:&#39;numeric&#39;}) : &#39;&#39;;
+meta.innerHTML = `&lt;span style=&quot;color:var(--navy);&quot;&gt;��
+${state.empresa}&lt;/span&gt;${fechaStr ? ` &amp;nbsp;·&amp;nbsp; &lt;span&gt;��
+${fechaStr}&lt;/span&gt;` : &#39;&#39;}`;
+}
+renderQuadrant(data); renderRanking(data); renderEvalBreakdown();
 }
 
 function getPriorityLabel(total) {
-  if (total >= 3.5) return ['Alta prioridad', 'priority-high'];
-  if (total >= 2) return ['Prioridad media', 'priority-mid'];
-  return ['Baja prioridad', 'priority-low'];
+if (total&gt;=3.5) return [&#39;Alta prioridad&#39;,&#39;priority-high&#39;];
+if (total&gt;=2) return [&#39;Prioridad media&#39;,&#39;priority-mid&#39;];
+return [&#39;Baja prioridad&#39;,&#39;priority-low&#39;];
 }
 
 function renderRanking(data) {
-  document.getElementById('rankTable').innerHTML = `
-    <thead><tr><th>#</th><th>Reto</th><th>Tipo</th><th>Factible</th><th>Estrat\u00e9gico</th><th>Nota Final</th><th>Prioridad</th></tr></thead>
-    <tbody>${data.map((d, i) => {
-      const medals = ['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'], [label, cls] = getPriorityLabel(d.total), pct = (d.total/5*100).toFixed(0);
-      return `<tr>
-        <td><span class="rank-medal">${medals[i]||''}</span> <span class="rank-pos">${i+1}</span></td>
-        <td><strong>${d.ch.shortName}</strong><div style="font-size:0.78rem;color:#666;margin-top:2px;">${d.ch.title.substring(0,60)}${d.ch.title.length>60?'...':''}</div></td>
-        <td><span class="tag-cell ${d.ch.type.toLowerCase()}">${d.ch.type}</span></td>
-        <td>${d.avgF.toFixed(2)}</td><td>${d.avgS.toFixed(2)}</td>
-        <td><div class="score-bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="score-num">${d.total.toFixed(2)}</div></div></td>
-        <td><span class="tag-cell ${cls}">${label}</span></td>
-      </tr>`;
-    }).join('')}</tbody>`;
+document.getElementById(&#39;rankTable&#39;).innerHTML = `
+&lt;thead&gt;&lt;tr&gt;&lt;th&gt;#&lt;/th&gt;&lt;th&gt;Reto&lt;/th&gt;&lt;th&gt;Tipo&lt;/th&gt;&lt;th&gt;Factible&lt;/th&gt;&lt;th&gt;Estratégi
+co&lt;/th&gt;&lt;th&gt;Nota Final&lt;/th&gt;&lt;th&gt;Prioridad&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+&lt;tbody&gt;${data.map((d,i)=&gt;{
+const medals=[&#39;��&#39;,&#39;��&#39;,&#39;��&#39;], [label,cls]=getPriorityLabel(d.total),
+pct=(d.total/5*100).toFixed(0);
+return `&lt;tr&gt;
+&lt;td&gt;&lt;span class=&quot;rank-medal&quot;&gt;${medals[i]||&#39;&#39;}&lt;/span&gt; &lt;span class=&quot;rank-
+pos&quot;&gt;${i+1}&lt;/span&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;${d.ch.shortName}&lt;/strong&gt;&lt;div style=&quot;font-
+size:0.75rem;color:var(--text-mid);margin-
+top:2px;&quot;&gt;${d.ch.title.substring(0,60)}${d.ch.title.length&gt;60?&#39;...&#39;:&#39;&#39;}&lt;/div&gt;&lt;/td&gt;
+&lt;td&gt;&lt;span class=&quot;tag-cell
+${d.ch.type.toLowerCase()}&quot;&gt;${d.ch.type}&lt;/span&gt;&lt;/td&gt;
+&lt;td&gt;${d.avgF.toFixed(2)}&lt;/td&gt;&lt;td&gt;${d.avgS.toFixed(2)}&lt;/td&gt;
+&lt;td&gt;&lt;div class=&quot;score-bar-cell&quot;&gt;&lt;div class=&quot;bar-track&quot;&gt;&lt;div class=&quot;bar-fill&quot;
+style=&quot;width:${pct}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;score-
+num&quot;&gt;${d.total.toFixed(2)}&lt;/div&gt;&lt;/div&gt;&lt;/td&gt;
+&lt;td&gt;&lt;span class=&quot;tag-cell ${cls}&quot;&gt;${label}&lt;/span&gt;&lt;/td&gt;
+&lt;/tr&gt;`;
+}).join(&#39;&#39;)}&lt;/tbody&gt;`;
 }
 
 function renderEvalBreakdown() {
-  document.getElementById('evalBreakdown').innerHTML = state.evaluators.map((ev, ei) => {
-    const done = countDoneForEval(ei), total = state.challenges.length * 8, pct = total ? Math.round(done/total*100) : 0;
-    return `<div class="eval-card"><div class="eval-name">${ev.name}</div><div class="eval-stat">${pct}%</div><div class="eval-sub">${done}/${total} criterios evaluados</div></div>`;
-  }).join('');
+document.getElementById(&#39;evalBreakdown&#39;).innerHTML =
+state.evaluators.map((ev,ei)=&gt;{
+const done=countDoneForEval(ei), total=state.challenges.length*8,
+pct=total?Math.round(done/total*100):0;
+return `&lt;div class=&quot;eval-card&quot;&gt;&lt;div class=&quot;eval-name&quot;&gt;${ev.name}&lt;/div&gt;&lt;div
+class=&quot;eval-stat&quot;&gt;${pct}%&lt;/div&gt;&lt;div class=&quot;eval-sub&quot;&gt;${done}/${total} criterios
+evaluados&lt;/div&gt;&lt;/div&gt;`;
+}).join(&#39;&#39;);
 }
 
 function renderQuadrant(data) {
-  const canvas = document.getElementById('quadrantChart'), ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1, size = Math.min(480, canvas.parentElement.offsetWidth - 56);
-  canvas.width = size * dpr; canvas.height = size * dpr;
-  canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
-  ctx.scale(dpr, dpr);
-  const pad = 50, w = size - pad*2, h = size - pad*2;
-  ctx.fillStyle = '#e8f4e8'; ctx.fillRect(pad + w/2, pad, w/2, h/2);
-  ctx.fillStyle = '#fef6dc'; ctx.fillRect(pad, pad, w/2, h/2);
-  ctx.fillStyle = '#fef6dc'; ctx.fillRect(pad + w/2, pad + h/2, w/2, h/2);
-  ctx.fillStyle = '#fde8e8'; ctx.fillRect(pad, pad + h/2, w/2, h/2);
-  ctx.font = '500 11px DM Sans, sans-serif'; ctx.fillStyle = '#999'; ctx.textAlign = 'center';
-  ctx.fillText('Evaluar despu\u00e9s', pad + w/4, pad + h/4 - 8); ctx.fillText('Baja capacidad', pad + w/4, pad + h/4 + 8);
-  ctx.fillText('PRIORIZAR \u2713', pad + w*3/4, pad + h/4 - 8); ctx.fillText('Alta factibilidad', pad + w*3/4, pad + h/4 + 8);
-  ctx.fillText('Descartar', pad + w/4, pad + h*3/4 - 8); ctx.fillText('o redefinir', pad + w/4, pad + h*3/4 + 8);
-  ctx.fillText('Considerar', pad + w*3/4, pad + h*3/4 - 8); ctx.fillText('a futuro', pad + w*3/4, pad + h*3/4 + 8);
-  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
-  ctx.beginPath(); ctx.moveTo(pad + w/2, pad); ctx.lineTo(pad + w/2, pad+h); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(pad, pad + h/2); ctx.lineTo(pad+w, pad+h/2); ctx.stroke();
-  ctx.setLineDash([]); ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.strokeRect(pad, pad, w, h);
-  ctx.fillStyle = '#444'; ctx.font = 'bold 11px DM Sans, sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('\u2190 FACTIBLE \u2192', pad + w/2, size - 8);
-  ctx.save(); ctx.translate(14, pad + h/2); ctx.rotate(-Math.PI/2); ctx.fillText('\u2190 ESTRAT\u00c9GICO \u2192', 0, 0); ctx.restore();
-  ctx.fillStyle = '#aaa'; ctx.font = '10px DM Sans, sans-serif'; ctx.textAlign = 'center';
-  for (let v=1; v<=5; v++) {
-    const x = pad + ((v-1)/4)*w; ctx.fillText(v, x, pad+h+14);
-    const y = pad + h - ((v-1)/4)*h; ctx.textAlign = 'right'; ctx.fillText(v, pad-6, y+4); ctx.textAlign = 'center';
-  }
-  const colors = ['#c9a84c','#1a4a4a','#8b2020','#2d7070','#6a3d9a','#1a5020'];
-  data.forEach((d, i) => {
-    const x = pad + ((d.avgF-1)/4)*w, y = pad + h - ((d.avgS-1)/4)*h, color = colors[i % colors.length];
-    ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI*2); ctx.fillStyle = color + '22'; ctx.fill();
-    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.fillStyle = color; ctx.font = 'bold 11px DM Sans, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(d.ch.shortName.replace(/^Reto\s*/i,'R'), x, y+4);
-  });
-  let lx = pad, ly = pad + h + 28;
-  data.forEach((d, i) => {
-    const color = colors[i % colors.length];
-    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx+6, ly, 5, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#444'; ctx.font = '10px DM Sans, sans-serif'; ctx.textAlign = 'left';
-    const label = `${d.ch.shortName} (${d.total.toFixed(1)})`;  ctx.fillText(label, lx+14, ly+4);
-    lx += ctx.measureText(label).width + 28;
-    if (lx > size - 60) { lx = pad; ly += 18; }
-  });
+const canvas = document.getElementById(&#39;quadrantChart&#39;);
+const ctx = canvas.getContext(&#39;2d&#39;);
+const dpr = window.devicePixelRatio||1;
+const size = Math.min(520, canvas.parentElement.offsetWidth - 56);
+canvas.width = size*dpr; canvas.height = size*dpr;
+canvas.style.width = size+&#39;px&#39;; canvas.style.height = size+&#39;px&#39;;
+ctx.scale(dpr,dpr);
+const pad = 72, w = size-pad*2, h = size-pad*2;
+ctx.fillStyle = &#39;rgba(255,187,0,0.10)&#39;; ctx.fillRect(pad, pad, w/2, h/2);
+ctx.fillStyle = &#39;rgba(15,186,227,0.12)&#39;; ctx.fillRect(pad+w/2, pad, w/2, h/2);
+ctx.fillStyle = &#39;rgba(255,67,67,0.08)&#39;; ctx.fillRect(pad, pad+h/2, w/2, h/2);
+ctx.fillStyle = &#39;rgba(97,128,159,0.10)&#39;; ctx.fillRect(pad+w/2, pad+h/2, w/2, h/2);
+ctx.textAlign = &#39;center&#39;;
+const drawQuadLabel = (text, x, y, color, icon) =&gt; {
+ctx.fillStyle = color;
+
+ctx.globalAlpha = 0.85;
+const lines = text.split(&#39;\n&#39;);
+ctx.font = `12px Montserrat, sans-serif`;
+ctx.fillText(icon, x, y - 4);
+ctx.font = `bold 8.5px Montserrat, sans-serif`;
+lines.forEach((line, i) =&gt; { ctx.fillText(line, x, y + 10 + i * 12); });
+ctx.globalAlpha = 1;
+};
+drawQuadLabel(&#39;Retos de\nIntraemprendimiento&#39;, pad+w/4, pad+12, &#39;#8a6000&#39;,
+&#39;��&#39;);
+drawQuadLabel(&#39;Retos de Innovación\nPriorizados ✓&#39;, pad+w*3/4, pad+12,
+&#39;#0a7a9a&#39;, &#39;��&#39;);
+drawQuadLabel(&#39;Retos\nDescartados&#39;, pad+w/4, pad+h/2+12, &#39;#cc2222&#39;, &#39;��
+
+&#39;);
+
+drawQuadLabel(&#39;Retos de\nInnovación Abierta&#39;, pad+w*3/4, pad+h/2+12,
+&#39;#3a5a6a&#39;, &#39;��&#39;);
+ctx.strokeStyle = &#39;#c0cfe0&#39;; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+ctx.beginPath(); ctx.moveTo(pad+w/2,pad); ctx.lineTo(pad+w/2,pad+h);
+ctx.stroke();
+ctx.beginPath(); ctx.moveTo(pad,pad+h/2); ctx.lineTo(pad+w,pad+h/2);
+ctx.stroke();
+ctx.setLineDash([]);
+ctx.strokeStyle = &#39;#c0cfe0&#39;; ctx.lineWidth = 1; ctx.strokeRect(pad,pad,w,h);
+ctx.fillStyle = &#39;#1A3365&#39;; ctx.font = `bold 10px Montserrat, sans-serif`; ctx.textAlign
+= &#39;center&#39;;
+ctx.fillText(&#39;← FACTIBLE →&#39;, pad+w/2, size-8);
+ctx.save(); ctx.translate(14, pad+h/2); ctx.rotate(-Math.PI/2);
+ctx.fillText(&#39;← ESTRATÉGICO →&#39;, 0, 0); ctx.restore();
+ctx.fillStyle = &#39;#8a9ab0&#39;; ctx.font = `600 9px Montserrat, sans-serif`; ctx.textAlign =
+&#39;center&#39;;
+for (let v=1; v&lt;=5; v++) {
+const x = pad+((v-1)/4)*w; ctx.fillText(v, x, pad+h+16);
+const y = pad+h-((v-1)/4)*h; ctx.textAlign=&#39;right&#39;; ctx.fillText(v, pad-8, y+4);
+ctx.textAlign=&#39;center&#39;;
+}
+const colors =
+[&#39;#1A3365&#39;,&#39;#0FBAE3&#39;,&#39;#FF4343&#39;,&#39;#FFBB00&#39;,&#39;#61809F&#39;,&#39;#0a7a9a&#39;,&#39;#cc2222&#39;,&#39;#8a600
+0&#39;,&#39;#2a6040&#39;,&#39;#7a2080&#39;];
+data.forEach((d,i)=&gt;{
+const x = pad+((d.avgF-1)/4)*w, y = pad+h-((d.avgS-1)/4)*h, color =
+colors[i%colors.length];
+ctx.beginPath(); ctx.arc(x,y,20,0,Math.PI*2); ctx.fillStyle = color+&#39;18&#39;; ctx.fill();
+ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fillStyle = color+&#39;28&#39;; ctx.fill();
+ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
+
+ctx.fillStyle = color; ctx.font = `bold 9.5px Montserrat, sans-serif`; ctx.textAlign =
+&#39;center&#39;;
+ctx.fillText(d.ch.shortName.replace(/^Reto\s*/i,&#39;R&#39;), x, y+3.5);
+});
+let lx = pad, ly = pad+h+32; ctx.textAlign = &#39;left&#39;;
+data.forEach((d,i)=&gt;{
+const color = colors[i%colors.length];
+ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx+5,ly,5,0,Math.PI*2); ctx.fill();
+ctx.fillStyle = &#39;#333&#39;; ctx.font = `600 9px Montserrat, sans-serif`;
+const label = `${d.ch.shortName} (${d.total.toFixed(1)})`;
+ctx.fillText(label, lx+13, ly+4);
+lx += ctx.measureText(label).width + 26;
+if (lx &gt; size-60) { lx=pad; ly+=16; }
+});
 }
 
 function exportCSV() {
-  const data = computeAggregateScores();
-  let csv = 'Reto,Descripci\u00f3n,Tipo,Factible Promedio,Estrat\u00e9gico Promedio,Nota Final\n';
-  data.forEach(d => { csv += `"${d.ch.shortName}","${d.ch.title}","${d.ch.type}",${d.avgF.toFixed(2)},${d.avgS.toFixed(2)},${d.total.toFixed(2)}\n`; });
-  const blob = new Blob([csv], { type:'text/csv' }), a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'evaluacion-retos.csv'; a.click();
+const data = computeAggregateScores();
+const fechaStr = state.fecha ? new
+Date(state.fecha+&#39;T12:00:00&#39;).toLocaleDateString(&#39;es-
+CO&#39;,{year:&#39;numeric&#39;,month:&#39;long&#39;,day:&#39;numeric&#39;}) : &#39;&#39;;
+let csv =
+`Empresa,${state.empresa}\nFecha,${fechaStr}\n\nReto,Descripción,Tipo,Factible
+Promedio,Estratégico Promedio,Nota Final\n`;
+data.forEach(d=&gt;{ csv +=
+`&quot;${d.ch.shortName}&quot;,&quot;${d.ch.title}&quot;,&quot;${d.ch.type}&quot;,${d.avgF.toFixed(2)},${d.avgS.toF
+ixed(2)},${d.total.toFixed(2)}\n`; });
+try {
+const blob = new Blob([csv],{type:&#39;text/csv&#39;});
+
+const a = document.createElement(&#39;a&#39;);
+a.href = URL.createObjectURL(blob);
+a.download = &#39;evaluacion-retos-plynn.csv&#39;;
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+} catch(e) { showCSVModal(csv); }
+}
+
+function showCSVModal(csv) {
+const overlay = document.createElement(&#39;div&#39;);
+overlay.style.cssText = &#39;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-
+index:9999;display:flex;align-items:center;justify-content:center;padding:20px;&#39;;
+overlay.innerHTML = `
+&lt;div style=&quot;background:white;border-radius:16px;padding:28px;max-
+width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);&quot;&gt;
+&lt;div style=&quot;font-family:Montserrat,sans-serif;&quot;&gt;
+&lt;div style=&quot;font-size:0.7rem;text-transform:uppercase;letter-
+spacing:0.15em;color:#0FBAE3;font-weight:700;margin-bottom:6px;&quot;&gt;Exportar
+CSV&lt;/div&gt;
+&lt;div style=&quot;font-size:1.1rem;font-weight:900;color:#1A3365;margin-
+bottom:4px;&quot;&gt;Copia el contenido&lt;/div&gt;
+&lt;div style=&quot;font-size:0.82rem;color:#666;margin-bottom:16px;&quot;&gt;Selecciona
+todo el texto, cópialo y pégalo en un archivo .csv o en Excel.&lt;/div&gt;
+&lt;textarea id=&quot;csvContent&quot; readonly style=&quot;width:100%;height:200px;font-
+family:monospace;font-size:0.78rem;border:1.5px solid #d0dce8;border-
+radius:8px;padding:12px;resize:none;background:#f7f9fc;&quot;&gt;${csv}&lt;/textarea&gt;
+&lt;div style=&quot;display:flex;gap:10px;margin-top:14px;justify-content:flex-end;&quot;&gt;
+&lt;button
+onclick=&quot;document.getElementById(&#39;csvContent&#39;).select();document.execComman
+d(&#39;copy&#39;);this.textContent=&#39;✓ Copiado!&#39;;&quot;
+style=&quot;background:#0FBAE3;color:#1A3365;border:none;border-
+
+radius:8px;padding:10px 20px;font-family:Montserrat,sans-serif;font-
+weight:700;font-size:0.82rem;cursor:pointer;&quot;&gt;�� Copiar todo&lt;/button&gt;
+&lt;button onclick=&quot;this.closest(&#39;div[style*=fixed]&#39;).remove();&quot;
+style=&quot;background:#1A3365;color:white;border:none;border-
+radius:8px;padding:10px 20px;font-family:Montserrat,sans-serif;font-
+weight:700;font-size:0.82rem;cursor:pointer;&quot;&gt;Cerrar&lt;/button&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;`;
+document.body.appendChild(overlay);
+setTimeout(()=&gt;{ const ta=document.getElementById(&#39;csvContent&#39;); ta.select();
+},100);
+}
+
+function printResults() {
+const data = computeAggregateScores();
+data.sort((a,b)=&gt;b.total-a.total);
+const fechaStr = state.fecha ? new
+Date(state.fecha+&#39;T12:00:00&#39;).toLocaleDateString(&#39;es-
+CO&#39;,{year:&#39;numeric&#39;,month:&#39;long&#39;,day:&#39;numeric&#39;}) : &#39;&#39;;
+const rows = data.map((d,i)=&gt;{
+const medals=[&#39;��&#39;,&#39;��&#39;,&#39;��&#39;];
+return `&lt;tr&gt;
+&lt;td&gt;${medals[i]||&#39;&#39;} ${i+1}&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;${d.ch.shortName}&lt;/strong&gt;&lt;br&gt;&lt;span style=&quot;font-
+size:11px;color:#666;&quot;&gt;${d.ch.title}&lt;/span&gt;&lt;/td&gt;
+&lt;td&gt;${d.ch.type}&lt;/td&gt;
+&lt;td&gt;${d.avgF.toFixed(2)}&lt;/td&gt;
+&lt;td&gt;${d.avgS.toFixed(2)}&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;${d.total.toFixed(2)}&lt;/strong&gt;&lt;/td&gt;
+
+&lt;/tr&gt;`;
+}).join(&#39;&#39;);
+const win = window.open(&#39;&#39;,&#39;_blank&#39;,&#39;width=900,height=700&#39;);
+if (!win) { alert(&#39;Por favor permite ventanas emergentes para imprimir.&#39;); return; }
+win.document.write(`&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;title&gt;Resultados - ${state.empresa}&lt;/title&gt;
+&lt;style&gt;
+body{font-family:Arial,sans-serif;padding:32px;color:#1a2535;}
+h1{color:#1A3365;font-size:22px;margin-bottom:4px;}
+.meta{color:#666;font-size:13px;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:#1A3365;color:white;padding:10px 12px;text-align:left;}
+td{padding:10px 12px;border-bottom:1px solid #eee;}
+tr:nth-child(even) td{background:#f7f9fc;}
+.footer{margin-top:32px;font-size:11px;color:#999;border-top:1px solid
+#eee;padding-top:12px;}
+&lt;/style&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Mapa de Priorización de Retos · Plynn&lt;/h1&gt;
+&lt;div class=&quot;meta&quot;&gt;�� ${state.empresa} &amp;nbsp;·&amp;nbsp; �� ${fechaStr}
+&amp;nbsp;·&amp;nbsp; �� ${state.evaluators.length} evaluador(es)&lt;/div&gt;
+&lt;table&gt;
+&lt;thead&gt;&lt;tr&gt;&lt;th&gt;#&lt;/th&gt;&lt;th&gt;Reto&lt;/th&gt;&lt;th&gt;Tipo&lt;/th&gt;&lt;th&gt;Factible&lt;/th&gt;&lt;th&gt;Estratégi
+co&lt;/th&gt;&lt;th&gt;Nota Final&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+&lt;tbody&gt;${rows}&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;div class=&quot;footer&quot;&gt;Generado por Plynn · Plataforma de Innovación&lt;/div&gt;
+&lt;script&gt;window.onload=function(){window.print();}${&#39;&lt;&#39;}/script&gt;
+
+&lt;/body&gt;&lt;/html&gt;`);
+win.document.close();
 }
 
 function init() {
-  renderEvaluators();
-  const examples = [
-    ['\u00bfC\u00f3mo podemos disminuir los errores en el proceso de fabricaci\u00f3n?', 'Problema', 'Reto 1'],
-    ['\u00bfQu\u00e9 podemos hacer con los materiales sobrantes en el proceso de fabricaci\u00f3n?', 'Necesidad', 'Reto 2'],
-    ['\u00bfC\u00f3mo podemos mejorar la experiencia del cliente en el punto de venta?', 'Oportunidad', 'Reto 3'],
-  ];
-  examples.forEach(([title, type, name]) => {
-    addReto(title, type);
-    const entries = document.querySelectorAll('.reto-entry');
-    const last = entries[entries.length-1];
-    const idMatch = last.id.match(/reto-entry-(\d+)/);
-    if (idMatch) document.getElementById(`reto-short-${idMatch[1]}`).value = name;
-  });
+renderEvaluators();
 }
 init();
-</script>
-</body>
-</html>
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
