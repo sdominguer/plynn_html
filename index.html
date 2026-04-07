@@ -86,6 +86,8 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
 .btn-yellow { background: var(--yellow); color: var(--navy); font-weight: 700; box-shadow: 0 4px 16px rgba(255,187,0,0.3); }
 .btn-yellow:hover { background: #e6a800; transform: translateY(-1px); }
 .btn-sm { padding: 8px 18px; font-size: 0.78rem; }
+.btn-green { background: #22c55e; color: white; box-shadow: 0 4px 16px rgba(34,197,94,0.3); }
+.btn-green:hover { background: #16a34a; transform: translateY(-1px); }
 .action-bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
 
 .add-btn { background: white; border: 1.5px dashed var(--border); border-radius: 10px; color: var(--blue-grey); cursor: pointer; padding: 11px; font-family: 'Montserrat', sans-serif; font-size: 0.83rem; font-weight: 600; width: 100%; transition: all 0.15s; margin-top: 8px; }
@@ -172,8 +174,47 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
 .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 .mt-24 { margin-top: 24px; }
 
+/* ===== ESTILOS NUEVOS: PANEL DE BASE DE DATOS ===== */
+.db-panel { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 20px 24px; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 24px; }
+.db-panel h2 { font-size: 0.82rem; font-weight: 700; color: var(--navy); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--cyan-light); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px; }
+.db-panel h2 .icon { width: 26px; height: 26px; background: var(--cyan-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.db-status { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; }
+.db-status.connected { background: #e0f7e0; color: #1a6020; border: 1px solid #b6e8b6; }
+.db-status.disconnected { background: var(--red-light); color: var(--red); border: 1px solid #ffc0c0; }
+.db-status.loading { background: var(--yellow-light); color: #8a6000; border: 1px solid #ffe080; }
+.db-status .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.db-status.connected .dot { background: #22c55e; }
+.db-status.disconnected .dot { background: var(--red); }
+.db-status.loading .dot { background: var(--yellow); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.session-list { max-height: 220px; overflow-y: auto; }
+.session-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+.session-item:hover { border-color: var(--cyan); background: var(--cyan-pale); }
+.session-item .si-info { flex: 1; }
+.session-item .si-empresa { font-weight: 700; font-size: 0.85rem; color: var(--navy); }
+.session-item .si-meta { font-size: 0.72rem; color: var(--text-mid); margin-top: 2px; }
+.session-item .si-badge { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+.si-badge.complete { background: #e0f7e0; color: #1a6020; }
+.si-badge.incomplete { background: var(--yellow-light); color: #8a6000; }
+.session-item .si-delete { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem; padding: 4px 8px; border-radius: 6px; transition: background 0.15s; }
+.session-item .si-delete:hover { background: var(--red-light); }
+
+/* Toast notification */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: white; z-index: 10000; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 380px; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: #22c55e; }
+.toast.error { background: var(--red); }
+.toast.info { background: var(--navy); }
+
+/* Auto-save indicator */
+.autosave-indicator { position: fixed; bottom: 24px; left: 24px; display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; background: white; border: 1px solid var(--border); box-shadow: 0 4px 16px var(--shadow); z-index: 100; opacity: 0; transition: opacity 0.3s; }
+.autosave-indicator.visible { opacity: 1; }
+.autosave-indicator .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media print {
-  .header, .progress-track, .eval-tabs, .challenge-nav, .action-bar, .btn { display: none !important; }
+  .header, .progress-track, .eval-tabs, .challenge-nav, .action-bar, .btn, .db-panel, .toast, .autosave-indicator { display: none !important; }
   .screen { display: block !important; }
   #screen-setup, #screen-evaluate { display: none !important; }
 }
@@ -201,6 +242,11 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
 </div>
 <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
 
+<!-- Toast container -->
+<div class="toast" id="toast"></div>
+<!-- Auto-save indicator -->
+<div class="autosave-indicator" id="autosaveIndicator"><div class="spinner"></div><span>Guardando...</span></div>
+
 <div class="container">
 
   <!-- SETUP -->
@@ -210,6 +256,23 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
       <h1>¿En qué retos<br>debemos <span class="accent">trabajar?</span></h1>
       <p>Configure los retos a evaluar y los miembros del comité. Cada evaluador calificará independientemente cada reto para obtener una priorización objetiva.</p>
     </div>
+
+    <!-- ===== PANEL DE BASE DE DATOS ===== -->
+    <div class="db-panel" id="dbPanel">
+      <h2><span class="icon">💾</span> Sesiones Guardadas <small style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:var(--text-mid);margin-left:8px;">(Google Sheets)</small></h2>
+      <div class="db-status disconnected" id="dbStatus">
+        <div class="dot"></div>
+        <span id="dbStatusText">Verificando conexión...</span>
+      </div>
+      <div id="sessionListArea">
+        <div style="text-align:center;padding:16px;color:var(--text-mid);font-size:0.82rem;">Cargando sesiones...</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="btn btn-sm btn-cyan" onclick="loadSessionList()" style="flex:1;">🔄 Actualizar</button>
+        <button class="btn btn-sm btn-secondary" onclick="newSession()" style="flex:1;">＋ Nueva sesión</button>
+      </div>
+    </div>
+
     <div class="form-grid" style="margin-bottom:20px;">
       <div class="form-section">
         <h2><span class="icon">🏢</span> Empresa</h2>
@@ -248,7 +311,10 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
         <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.16em;color:var(--cyan);margin-bottom:4px;font-weight:700;">Fase de Evaluación</div>
         <div style="font-size:1.3rem;font-weight:900;color:var(--navy);">Califique cada reto</div>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="goBack()">← Volver</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green btn-sm" onclick="manualSave()">💾 Guardar</button>
+        <button class="btn btn-secondary btn-sm" onclick="goBack()">← Volver</button>
+      </div>
     </div>
     <div class="eval-tabs" id="evalTabs"></div>
     <div class="challenge-nav" id="challengeNav"></div>
@@ -282,6 +348,7 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
     </div>
     <div class="action-bar">
       <button class="btn btn-secondary" onclick="goBackToEval()">← Volver a evaluar</button>
+      <button class="btn btn-green" onclick="manualSave()">💾 Guardar en Sheets</button>
       <button class="btn btn-primary" onclick="printResults()">🖨️ Imprimir</button>
       <button class="btn btn-cyan" onclick="exportCSV()">⬇ Exportar CSV</button>
     </div>
@@ -290,7 +357,13 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
 </div>
 
 <script>
-const CRITERIA = [
+// ============================================================
+// CONFIGURACIÓN — CAMBIA ESTA URL POR TU URL DE APPS SCRIPT
+// ============================================================
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzuZbbanWsqfKKOxfVhEvy8GKQfTlfDmtAQrAmGaRdIVPKtLR-OeSw7YLLEsRm7e9EeiQ/exec';
+// ============================================================
+
+var CRITERIA = [
   { id:'c1', axis:'FACTIBLE', weight:0.2, text:'¿La empresa cuenta con los recursos humanos para trabajar en este Reto? (1 = no cuenta con los recursos, 5 = sí cuenta con todos los recursos)' },
   { id:'c2', axis:'FACTIBLE', weight:0.4, text:'¿La empresa cuenta con los recursos financieros para una posible solución para este Reto? (1 = no cuenta con los recursos, 5 = sí cuenta con todos los recursos)' },
   { id:'c3', axis:'FACTIBLE', weight:0.2, text:'¿La empresa cuenta con el conocimiento para trabajar en este Reto? (1 = no cuenta con el conocimiento, 5 = sí cuenta con el conocimiento)' },
@@ -301,30 +374,321 @@ const CRITERIA = [
   { id:'c8', axis:'ESTRATÉGICO', weight:0.15, text:'¿Trabajar en este Reto puede crear un impacto positivo al medio ambiente y/o a la sociedad? (1 = no genera impacto, 5 = sí genera impactos positivos)' }
 ];
 
-let state = { evaluators:[], challenges:[], scores:{}, currentEval:0, currentChallenge:0, empresa:'', fecha:'' };
+var state = { evaluators:[], challenges:[], scores:{}, currentEval:0, currentChallenge:0, empresa:'', fecha:'', sessionId:null };
+
+// ============================================================
+// FUNCIONES DE BASE DE DATOS (Google Sheets)
+// ============================================================
+
+var dbConnected = false;
+var saveTimeout = null;
+
+function showToast(message, type) {
+  type = type || 'info';
+  var el = document.getElementById('toast');
+  el.textContent = message;
+  el.className = 'toast ' + type + ' show';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function() { el.classList.remove('show'); }, 3500);
+}
+
+function showAutosave(visible) {
+  var el = document.getElementById('autosaveIndicator');
+  if (visible) { el.classList.add('visible'); }
+  else { el.classList.remove('visible'); }
+}
+
+function updateDbStatus(status, text) {
+  var el = document.getElementById('dbStatus');
+  el.className = 'db-status ' + status;
+  document.getElementById('dbStatusText').textContent = text;
+}
+
+function isConfigured() {
+  return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT';
+}
+
+function loadSessionList() {
+  if (!isConfigured()) {
+    updateDbStatus('disconnected', 'URL de Apps Script no configurada');
+    document.getElementById('sessionListArea').innerHTML =
+      '<div style="text-align:center;padding:16px;color:var(--red);font-size:0.78rem;">'
+      + '⚠️ Configura la variable <code>APPS_SCRIPT_URL</code> en el código HTML con la URL de tu implementación de Apps Script.'
+      + '</div>';
+    return;
+  }
+
+  updateDbStatus('loading', 'Conectando con Google Sheets...');
+
+  fetch(APPS_SCRIPT_URL + '?action=list')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      dbConnected = true;
+      if (data.error) {
+        updateDbStatus('disconnected', 'Error: ' + data.error);
+        return;
+      }
+      updateDbStatus('connected', 'Conectado a Google Sheets');
+      renderSessionList(data.sessions || []);
+    })
+    .catch(function(err) {
+      dbConnected = false;
+      updateDbStatus('disconnected', 'Sin conexión — modo offline');
+      document.getElementById('sessionListArea').innerHTML =
+        '<div style="text-align:center;padding:16px;color:var(--text-mid);font-size:0.78rem;">'
+        + 'No se pudo conectar. Puedes trabajar offline y guardar después.'
+        + '</div>';
+    });
+}
+
+function renderSessionList(sessions) {
+  var area = document.getElementById('sessionListArea');
+  if (!sessions.length) {
+    area.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-mid);font-size:0.82rem;">No hay sesiones guardadas. Crea una nueva para comenzar.</div>';
+    return;
+  }
+
+  var html = '<div class="session-list">';
+  sessions.forEach(function(s) {
+    var isComplete = s.completado === 'Sí';
+    html += '<div class="session-item" onclick="loadSavedSession(\'' + s.sessionId + '\')">'
+      + '<div class="si-info">'
+      + '<div class="si-empresa">' + (s.empresa || 'Sin nombre') + '</div>'
+      + '<div class="si-meta">📅 ' + (s.fecha || 'Sin fecha') + ' · 🎯 ' + s.numRetos + ' retos · 👥 ' + (s.evaluadores || '').split('||').length + ' eval.</div>'
+      + '</div>'
+      + '<span class="si-badge ' + (isComplete ? 'complete' : 'incomplete') + '">' + (isComplete ? '✓ Completo' : '⏳ En curso') + '</span>'
+      + '<button class="si-delete" onclick="event.stopPropagation();deleteSavedSession(\'' + s.sessionId + '\',\'' + (s.empresa||'').replace(/'/g,"\\'") + '\')" title="Eliminar">🗑</button>'
+      + '</div>';
+  });
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function loadSavedSession(sessionId) {
+  if (!isConfigured()) return;
+
+  updateDbStatus('loading', 'Cargando sesión...');
+  showToast('Cargando sesión...', 'info');
+
+  fetch(APPS_SCRIPT_URL + '?action=load&sessionId=' + encodeURIComponent(sessionId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { showToast('Error: ' + data.error, 'error'); updateDbStatus('connected', 'Conectado'); return; }
+
+      // Restaurar estado
+      state.sessionId = data.session.sessionId;
+      state.empresa = data.session.empresa || '';
+      state.fecha = data.session.fecha || '';
+
+      // Restaurar evaluadores
+      var evaluadores = data.session.evaluadores || [];
+      state.evaluators = evaluadores.map(function(name) { return { name: name }; });
+
+      // Restaurar retos
+      state.challenges = (data.retos || []).map(function(r) {
+        return { title: r.titulo, type: r.tipo, shortName: r.nombreCorto };
+      });
+
+      // Restaurar scores
+      state.scores = {};
+      state.evaluators.forEach(function(_, ei) {
+        state.scores[ei] = {};
+        state.challenges.forEach(function(_, ci) { state.scores[ei][ci] = {}; });
+      });
+
+      (data.evaluaciones || []).forEach(function(ev) {
+        var ei = ev.evaluadorIndex;
+        var ci = ev.retoIndex;
+        if (state.scores[ei] && state.scores[ei][ci] !== undefined) {
+          state.scores[ei][ci] = {
+            c1: ev.c1 || 0, c2: ev.c2 || 0, c3: ev.c3 || 0, c4: ev.c4 || 0,
+            c5: ev.c5 || 0, c6: ev.c6 || 0, c7: ev.c7 || 0, c8: ev.c8 || 0
+          };
+        }
+      });
+
+      // Actualizar UI de configuración
+      document.getElementById('sessionEmpresa').value = state.empresa;
+      document.getElementById('sessionFecha').value = state.fecha;
+      document.getElementById('numEvaluators').value = state.evaluators.length;
+      renderEvaluators();
+      state.evaluators.forEach(function(ev, i) {
+        var el = document.getElementById('evalName' + i);
+        if (el) el.value = ev.name;
+      });
+
+      // Limpiar y recrear retos
+      document.getElementById('retos-list').innerHTML = '';
+      retoIdCounter = 0;
+      state.challenges.forEach(function(ch) {
+        addReto(ch.title, ch.type, ch.shortName);
+      });
+
+      updateDbStatus('connected', 'Conectado — sesión cargada');
+      showToast('✓ Sesión cargada: ' + state.empresa, 'success');
+
+      // Si hay evaluaciones, ir directo a evaluar
+      if (data.evaluaciones && data.evaluaciones.length > 0) {
+        state.currentEval = 0;
+        state.currentChallenge = 0;
+        showScreen('screen-evaluate');
+        renderEvalScreen();
+      }
+    })
+    .catch(function(err) {
+      showToast('Error al cargar: ' + err.message, 'error');
+      updateDbStatus('connected', 'Conectado');
+    });
+}
+
+function deleteSavedSession(sessionId, empresa) {
+  if (!confirm('¿Eliminar la sesión "' + empresa + '"? Esta acción no se puede deshacer.')) return;
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'delete', sessionId: sessionId })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      showToast('Sesión eliminada', 'success');
+      loadSessionList();
+    } else {
+      showToast('Error: ' + (data.error || 'desconocido'), 'error');
+    }
+  })
+  .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
+}
+
+function newSession() {
+  state.sessionId = null;
+  state.empresa = '';
+  state.fecha = '';
+  state.evaluators = [];
+  state.challenges = [];
+  state.scores = {};
+  document.getElementById('sessionEmpresa').value = '';
+  document.getElementById('sessionFecha').value = '';
+  document.getElementById('numEvaluators').value = 3;
+  document.getElementById('retos-list').innerHTML = '';
+  retoIdCounter = 0;
+  renderEvaluators();
+  showToast('Nueva sesión — configura los datos', 'info');
+}
+
+function saveToSheets(showNotification) {
+  if (!isConfigured() || !dbConnected) return;
+
+  showAutosave(true);
+
+  // Construir evaluaciones detalladas
+  var evaluaciones = [];
+  state.evaluators.forEach(function(ev, ei) {
+    state.challenges.forEach(function(ch, ci) {
+      var sc = state.scores[ei] && state.scores[ei][ci] ? state.scores[ei][ci] : {};
+      var factW = {c1:0.2, c2:0.4, c3:0.2, c4:0.2};
+      var stratW = {c5:0.35, c6:0.15, c7:0.35, c8:0.15};
+      var f = 0, s = 0;
+      Object.keys(factW).forEach(function(k) { f += (sc[k]||0) * factW[k]; });
+      Object.keys(stratW).forEach(function(k) { s += (sc[k]||0) * stratW[k]; });
+
+      evaluaciones.push({
+        evaluadorIndex: ei,
+        evaluadorNombre: ev.name,
+        retoIndex: ci,
+        retoNombre: ch.shortName,
+        c1: sc.c1||0, c2: sc.c2||0, c3: sc.c3||0, c4: sc.c4||0,
+        c5: sc.c5||0, c6: sc.c6||0, c7: sc.c7||0, c8: sc.c8||0,
+        factible: parseFloat(f.toFixed(2)),
+        estrategico: parseFloat(s.toFixed(2)),
+        total: parseFloat(((f+s)/2).toFixed(2))
+      });
+    });
+  });
+
+  // Verificar si todo está completo
+  var allDone = state.evaluators.every(function(_, ei) {
+    return state.challenges.every(function(_, ci) {
+      return CRITERIA.every(function(cr) { return getScore(ei, ci, cr.id); });
+    });
+  });
+
+  var payload = {
+    action: 'save',
+    sessionId: state.sessionId,
+    empresa: state.empresa,
+    fecha: state.fecha,
+    evaluadores: state.evaluators.map(function(e) { return e.name; }),
+    numRetos: state.challenges.length,
+    completado: allDone,
+    retos: state.challenges.map(function(ch) {
+      return { titulo: ch.title, tipo: ch.type, nombreCorto: ch.shortName };
+    }),
+    evaluaciones: evaluaciones
+  };
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    showAutosave(false);
+    if (data.success) {
+      if (!state.sessionId) state.sessionId = data.sessionId;
+      if (showNotification) showToast('✓ Guardado en Google Sheets', 'success');
+    } else {
+      if (showNotification) showToast('Error al guardar: ' + (data.error || ''), 'error');
+    }
+  })
+  .catch(function(err) {
+    showAutosave(false);
+    if (showNotification) showToast('Error de conexión al guardar', 'error');
+  });
+}
+
+function manualSave() {
+  if (!isConfigured()) {
+    showToast('Configura la URL de Apps Script primero', 'error');
+    return;
+  }
+  saveToSheets(true);
+}
+
+function scheduleAutoSave() {
+  if (!isConfigured() || !dbConnected) return;
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(function() { saveToSheets(false); }, 5000);
+}
+
+// ============================================================
+// FUNCIONES ORIGINALES (con auto-save integrado)
+// ============================================================
 
 function renderEvaluators() {
-  const n = Math.max(1, Math.min(6, parseInt(document.getElementById('numEvaluators').value) || 1));
+  var n = Math.max(1, Math.min(6, parseInt(document.getElementById('numEvaluators').value) || 1));
   document.getElementById('numEvaluators').value = n;
-  const container = document.getElementById('evaluators-list');
+  var container = document.getElementById('evaluators-list');
   container.innerHTML = '';
-  for (let i = 0; i < n; i++) {
-    const prev = state.evaluators[i] || {};
+  for (var i = 0; i < n; i++) {
+    var prev = state.evaluators[i] || {};
     container.innerHTML += '<div class="mb-16"><label>Nombre del evaluador ' + (i+1) + '</label><input type="text" id="evalName' + i + '" value="' + (prev.name||'') + '" placeholder="Ej: María García"></div>';
   }
 }
 
-let retoIdCounter = 0;
+var retoIdCounter = 0;
 function addReto(title, type, shortVal) {
   title = title || '';
   type = type || 'Problema';
   shortVal = shortVal || '';
-  const existing = document.querySelectorAll('.reto-entry').length;
+  var existing = document.querySelectorAll('.reto-entry').length;
   if (existing >= 12) { alert('Máximo 12 retos permitidos.'); return; }
-  const id = ++retoIdCounter;
-  const container = document.getElementById('retos-list');
-  const idx = existing + 1;
-  const div = document.createElement('div');
+  var id = ++retoIdCounter;
+  var container = document.getElementById('retos-list');
+  var idx = existing + 1;
+  var div = document.createElement('div');
   div.className = 'reto-entry';
   div.id = 'reto-entry-' + id;
   div.innerHTML = '<div class="reto-num">' + idx + '</div>'
@@ -357,31 +721,42 @@ function renumberRetos() {
 function collectSetup() {
   state.empresa = (document.getElementById('sessionEmpresa').value || '').trim() || 'Sin especificar';
   state.fecha = document.getElementById('sessionFecha').value || '';
-  const n = parseInt(document.getElementById('numEvaluators').value);
+  var n = parseInt(document.getElementById('numEvaluators').value);
   state.evaluators = [];
-  for (let i = 0; i < n; i++) {
-    const nameEl = document.getElementById('evalName' + i);
-    const name = nameEl ? (nameEl.value || '').trim() : '';
+  for (var i = 0; i < n; i++) {
+    var nameEl = document.getElementById('evalName' + i);
+    var name = nameEl ? (nameEl.value || '').trim() : '';
     state.evaluators.push({ name: name || ('Evaluador ' + (i+1)) });
   }
+
+  // Preservar scores existentes si hay sesión cargada
+  var oldScores = state.scores;
+  var oldChallenges = state.challenges;
+
   state.challenges = [];
   document.querySelectorAll('.reto-entry').forEach(function(el) {
-    const idMatch = el.id.match(/reto-entry-(\d+)/);
+    var idMatch = el.id.match(/reto-entry-(\d+)/);
     if (!idMatch) return;
-    const id = idMatch[1];
-    const titleEl = document.getElementById('reto-title-' + id);
-    const typeEl = document.getElementById('reto-type-' + id);
-    const shortEl = document.getElementById('reto-short-' + id);
-    const title = titleEl ? titleEl.value.trim() : '';
-    const type = typeEl ? typeEl.value : 'Problema';
-    const shortName = shortEl ? shortEl.value.trim() : '';
+    var id = idMatch[1];
+    var titleEl = document.getElementById('reto-title-' + id);
+    var typeEl = document.getElementById('reto-type-' + id);
+    var shortEl = document.getElementById('reto-short-' + id);
+    var title = titleEl ? titleEl.value.trim() : '';
+    var type = typeEl ? typeEl.value : 'Problema';
+    var shortName = shortEl ? shortEl.value.trim() : '';
     if (title) state.challenges.push({ title: title, type: type, shortName: shortName || ('Reto ' + (state.challenges.length + 1)) });
   });
-  state.scores = {};
-  state.evaluators.forEach(function(_, ei) {
-    state.scores[ei] = {};
-    state.challenges.forEach(function(_, ci) { state.scores[ei][ci] = {}; });
-  });
+
+  // Si estamos re-colectando y ya teníamos scores, mantenerlos
+  if (Object.keys(oldScores).length > 0 && oldChallenges.length === state.challenges.length) {
+    // Mantener scores existentes
+  } else {
+    state.scores = {};
+    state.evaluators.forEach(function(_, ei) {
+      state.scores[ei] = {};
+      state.challenges.forEach(function(_, ci) { state.scores[ei][ci] = {}; });
+    });
+  }
 }
 
 function startEvaluation() {
@@ -391,13 +766,15 @@ function startEvaluation() {
   state.currentChallenge = 0;
   showScreen('screen-evaluate');
   renderEvalScreen();
+  // Auto-save al iniciar evaluación
+  scheduleAutoSave();
 }
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
-  const steps = { 'screen-setup': ['Configuración', 8], 'screen-evaluate': ['Evaluación', 55], 'screen-results': ['Resultados', 100] };
-  const label = steps[id][0], pct = steps[id][1];
+  var steps = { 'screen-setup': ['Configuración', 8], 'screen-evaluate': ['Evaluación', 55], 'screen-results': ['Resultados', 100] };
+  var label = steps[id][0], pct = steps[id][1];
   document.getElementById('stepBadge').textContent = label;
   document.getElementById('progressFill').style.width = pct + '%';
   window.scrollTo(0, 0);
@@ -408,17 +785,17 @@ function getScore(ei, ci, crid) {
 }
 
 function renderProgressIndicator() {
-  const el = document.getElementById('progressIndicator');
+  var el = document.getElementById('progressIndicator');
   if (!el) return;
-  const totalCriteria = state.evaluators.length * state.challenges.length * 8;
-  let done = 0;
+  var totalCriteria = state.evaluators.length * state.challenges.length * 8;
+  var done = 0;
   state.evaluators.forEach(function(_, ei) {
     state.challenges.forEach(function(_, ci) {
       CRITERIA.forEach(function(cr) { if (getScore(ei, ci, cr.id)) done++; });
     });
   });
-  const pct = totalCriteria ? Math.round(done / totalCriteria * 100) : 0;
-  const allDone = done === totalCriteria;
+  var pct = totalCriteria ? Math.round(done / totalCriteria * 100) : 0;
+  var allDone = done === totalCriteria;
   el.innerHTML = '<div style="flex:1;min-width:160px;">'
     + '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-mid);margin-bottom:6px;">Progreso general del comité</div>'
     + '<div style="background:var(--off-white);border-radius:6px;height:8px;overflow:hidden;border:1px solid var(--border);">'
@@ -439,9 +816,9 @@ function renderEvalScreen() {
 
 function renderEvalTabs() {
   document.getElementById('evalTabs').innerHTML = state.evaluators.map(function(ev, i) {
-    const done = countDoneForEval(i);
-    const total = state.challenges.length * 8;
-    const pct = total ? Math.round(done / total * 100) : 0;
+    var done = countDoneForEval(i);
+    var total = state.challenges.length * 8;
+    var pct = total ? Math.round(done / total * 100) : 0;
     return '<div class="eval-tab ' + (i === state.currentEval ? 'active' : '') + '" onclick="switchEval(' + i + ')">'
       + '<div class="tab-name">' + ev.name + '</div>'
       + '<div class="tab-status">' + pct + '% completado</div></div>';
@@ -449,7 +826,7 @@ function renderEvalTabs() {
 }
 
 function countDoneForEval(ei) {
-  let c = 0;
+  var c = 0;
   state.challenges.forEach(function(_, ci) {
     CRITERIA.forEach(function(cr) { if (getScore(ei, ci, cr.id)) c++; });
   });
@@ -458,26 +835,26 @@ function countDoneForEval(ei) {
 
 function renderChallengePills() {
   document.getElementById('challengeNav').innerHTML = state.challenges.map(function(ch, i) {
-    const done = CRITERIA.every(function(cr) { return getScore(state.currentEval, i, cr.id); });
+    var done = CRITERIA.every(function(cr) { return getScore(state.currentEval, i, cr.id); });
     return '<div class="ch-pill ' + (i === state.currentChallenge ? 'active' : '') + ' ' + (done ? 'done' : '') + '" onclick="goToChallenge(' + i + ')">' + ch.shortName + '</div>';
   }).join('');
 }
 
 function renderChallengeCard() {
-  const ei = state.currentEval, ci = state.currentChallenge, ch = state.challenges[ci];
+  var ei = state.currentEval, ci = state.currentChallenge, ch = state.challenges[ci];
   if (!ch) return;
 
   function renderCriteria(criteria) {
     return criteria.map(function(cr) {
-      const val = getScore(ei, ci, cr.id);
-      const stars = [1,2,3,4,5].map(function(v) {
+      var val = getScore(ei, ci, cr.id);
+      var stars = [1,2,3,4,5].map(function(v) {
         return '<div class="star ' + (val >= v ? 'selected' : '') + '" onclick="setScore(' + ei + ',' + ci + ',\'' + cr.id + '\',' + v + ')">' + v + '</div>';
       }).join('');
       return '<div class="criterion-row"><div class="criterion-text">' + cr.text + '</div><div class="star-rating">' + stars + '</div></div>';
     }).join('');
   }
 
-  const scores = computeScores(ei, ci);
+  var scores = computeScores(ei, ci);
   document.getElementById('challengeArea').innerHTML =
     '<div class="challenge-card">'
     + '<div class="ch-header">'
@@ -500,9 +877,9 @@ function renderChallengeCard() {
 }
 
 function computeScores(ei, ci) {
-  const factW = {c1:0.2, c2:0.4, c3:0.2, c4:0.2};
-  const stratW = {c5:0.35, c6:0.15, c7:0.35, c8:0.15};
-  let f = 0, s = 0;
+  var factW = {c1:0.2, c2:0.4, c3:0.2, c4:0.2};
+  var stratW = {c5:0.35, c6:0.15, c7:0.35, c8:0.15};
+  var f = 0, s = 0;
   Object.keys(factW).forEach(function(k) { f += getScore(ei, ci, k) * factW[k]; });
   Object.keys(stratW).forEach(function(k) { s += getScore(ei, ci, k) * stratW[k]; });
   return { factible: f.toFixed(1), estrategico: s.toFixed(1), total: ((f+s)/2).toFixed(1) };
@@ -515,6 +892,8 @@ function setScore(ei, ci, cid, val) {
   renderEvalTabs();
   updateNavButtons();
   renderProgressIndicator();
+  // Auto-save después de cada calificación
+  scheduleAutoSave();
 }
 
 function switchEval(idx) { state.currentEval = idx; state.currentChallenge = 0; renderEvalScreen(); }
@@ -535,10 +914,10 @@ function prevChallenge() {
 }
 
 function updateNavButtons() {
-  const ci = state.currentChallenge, total = state.challenges.length;
+  var ci = state.currentChallenge, total = state.challenges.length;
   document.getElementById('btnPrev').style.display = ci === 0 ? 'none' : 'inline-flex';
   document.getElementById('btnNext').style.display = ci === total - 1 ? 'none' : 'inline-flex';
-  const allDone = state.evaluators.every(function(_, ei) {
+  var allDone = state.evaluators.every(function(_, ei) {
     return state.challenges.every(function(_, chi) {
       return CRITERIA.every(function(cr) { return getScore(ei, chi, cr.id); });
     });
@@ -547,38 +926,40 @@ function updateNavButtons() {
 }
 
 function checkAndShowResults() { showResults(); }
-function goBack() { showScreen('screen-setup'); }
+function goBack() { showScreen('screen-setup'); loadSessionList(); }
 function goBackToEval() { showScreen('screen-evaluate'); renderEvalScreen(); }
 
 function computeAggregateScores() {
   return state.challenges.map(function(ch, ci) {
-    const factW = {c1:0.2, c2:0.4, c3:0.2, c4:0.2};
-    const stratW = {c5:0.35, c6:0.15, c7:0.35, c8:0.15};
-    let sumF = 0, sumS = 0;
+    var factW = {c1:0.2, c2:0.4, c3:0.2, c4:0.2};
+    var stratW = {c5:0.35, c6:0.15, c7:0.35, c8:0.15};
+    var sumF = 0, sumS = 0;
     state.evaluators.forEach(function(_, ei) {
-      let f = 0, s = 0;
+      var f = 0, s = 0;
       Object.keys(factW).forEach(function(k) { f += getScore(ei, ci, k) * factW[k]; });
       Object.keys(stratW).forEach(function(k) { s += getScore(ei, ci, k) * stratW[k]; });
       sumF += f; sumS += s;
     });
-    const avgF = sumF / state.evaluators.length;
-    const avgS = sumS / state.evaluators.length;
+    var avgF = sumF / state.evaluators.length;
+    var avgS = sumS / state.evaluators.length;
     return { ch: ch, ci: ci, avgF: avgF, avgS: avgS, total: (avgF + avgS) / 2 };
   });
 }
 
 function showResults() {
-  const data = computeAggregateScores();
+  var data = computeAggregateScores();
   data.sort(function(a, b) { return b.total - a.total; });
   showScreen('screen-results');
-  const meta = document.getElementById('resultsMetadata');
+  var meta = document.getElementById('resultsMetadata');
   if (meta) {
-    const fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
+    var fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
     meta.innerHTML = '<span style="color:var(--navy);">🏢 ' + state.empresa + '</span>' + (fechaStr ? ' &nbsp;·&nbsp; <span>📅 ' + fechaStr + '</span>' : '');
   }
   renderQuadrant(data);
   renderRanking(data);
   renderEvalBreakdown();
+  // Guardar al ver resultados
+  saveToSheets(false);
 }
 
 function getPriorityLabel(total) {
@@ -588,11 +969,11 @@ function getPriorityLabel(total) {
 }
 
 function renderRanking(data) {
-  const medals = ['🥇','🥈','🥉'];
-  const rows = data.map(function(d, i) {
-    const pl = getPriorityLabel(d.total);
-    const label = pl[0], cls = pl[1];
-    const pct = (d.total / 5 * 100).toFixed(0);
+  var medals = ['🥇','🥈','🥉'];
+  var rows = data.map(function(d, i) {
+    var pl = getPriorityLabel(d.total);
+    var label = pl[0], cls = pl[1];
+    var pct = (d.total / 5 * 100).toFixed(0);
     return '<tr>'
       + '<td><span class="rank-medal">' + (medals[i]||'') + '</span> <span class="rank-pos">' + (i+1) + '</span></td>'
       + '<td><strong>' + d.ch.shortName + '</strong><div style="font-size:0.75rem;color:var(--text-mid);margin-top:2px;">' + d.ch.title.substring(0,60) + (d.ch.title.length>60?'...':'') + '</div></td>'
@@ -608,22 +989,22 @@ function renderRanking(data) {
 
 function renderEvalBreakdown() {
   document.getElementById('evalBreakdown').innerHTML = state.evaluators.map(function(ev, ei) {
-    const done = countDoneForEval(ei);
-    const total = state.challenges.length * 8;
-    const pct = total ? Math.round(done / total * 100) : 0;
+    var done = countDoneForEval(ei);
+    var total = state.challenges.length * 8;
+    var pct = total ? Math.round(done / total * 100) : 0;
     return '<div class="eval-card"><div class="eval-name">' + ev.name + '</div><div class="eval-stat">' + pct + '%</div><div class="eval-sub">' + done + '/' + total + ' criterios evaluados</div></div>';
   }).join('');
 }
 
 function renderQuadrant(data) {
-  const canvas = document.getElementById('quadrantChart');
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const size = Math.min(520, canvas.parentElement.offsetWidth - 56);
+  var canvas = document.getElementById('quadrantChart');
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var size = Math.min(520, canvas.parentElement.offsetWidth - 56);
   canvas.width = size * dpr; canvas.height = size * dpr;
   canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
   ctx.scale(dpr, dpr);
-  const pad = 72, w = size - pad * 2, h = size - pad * 2;
+  var pad = 72, w = size - pad * 2, h = size - pad * 2;
 
   ctx.fillStyle = 'rgba(255,187,0,0.10)'; ctx.fillRect(pad, pad, w/2, h/2);
   ctx.fillStyle = 'rgba(15,186,227,0.12)'; ctx.fillRect(pad+w/2, pad, w/2, h/2);
@@ -634,7 +1015,7 @@ function renderQuadrant(data) {
   function drawQuadLabel(text, x, y, color, icon) {
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.85;
-    const lines = text.split('\n');
+    var lines = text.split('\n');
     ctx.font = '12px Montserrat, sans-serif';
     ctx.fillText(icon, x, y - 4);
     ctx.font = 'bold 8.5px Montserrat, sans-serif';
@@ -658,18 +1039,18 @@ function renderQuadrant(data) {
   ctx.fillText('← ESTRATÉGICO →', 0, 0); ctx.restore();
 
   ctx.fillStyle = '#8a9ab0'; ctx.font = '600 9px Montserrat, sans-serif'; ctx.textAlign = 'center';
-  for (let v = 1; v <= 5; v++) {
-    const x = pad + ((v-1)/4) * w;
+  for (var v = 1; v <= 5; v++) {
+    var x = pad + ((v-1)/4) * w;
     ctx.fillText(v, x, pad+h+16);
-    const y = pad + h - ((v-1)/4) * h;
+    var y = pad + h - ((v-1)/4) * h;
     ctx.textAlign = 'right'; ctx.fillText(v, pad-8, y+4); ctx.textAlign = 'center';
   }
 
-  const colors = ['#1A3365','#0FBAE3','#FF4343','#FFBB00','#61809F','#0a7a9a','#cc2222','#8a6000','#2a6040','#7a2080'];
+  var colors = ['#1A3365','#0FBAE3','#FF4343','#FFBB00','#61809F','#0a7a9a','#cc2222','#8a6000','#2a6040','#7a2080'];
   data.forEach(function(d, i) {
-    const x = pad + ((d.avgF-1)/4) * w;
-    const y = pad + h - ((d.avgS-1)/4) * h;
-    const color = colors[i % colors.length];
+    var x = pad + ((d.avgF-1)/4) * w;
+    var y = pad + h - ((d.avgS-1)/4) * h;
+    var color = colors[i % colors.length];
     ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.fillStyle = color + '18'; ctx.fill();
     ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI*2); ctx.fillStyle = color + '28'; ctx.fill();
     ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
@@ -677,13 +1058,13 @@ function renderQuadrant(data) {
     ctx.fillText(d.ch.shortName.replace(/^Reto\s*/i, 'R'), x, y + 3.5);
   });
 
-  let lx = pad, ly = pad + h + 32;
+  var lx = pad, ly = pad + h + 32;
   ctx.textAlign = 'left';
   data.forEach(function(d, i) {
-    const color = colors[i % colors.length];
+    var color = colors[i % colors.length];
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx+5, ly, 5, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#333'; ctx.font = '600 9px Montserrat, sans-serif';
-    const lbl = d.ch.shortName + ' (' + d.total.toFixed(1) + ')';
+    var lbl = d.ch.shortName + ' (' + d.total.toFixed(1) + ')';
     ctx.fillText(lbl, lx+13, ly+4);
     lx += ctx.measureText(lbl).width + 26;
     if (lx > size - 60) { lx = pad; ly += 16; }
@@ -691,15 +1072,15 @@ function renderQuadrant(data) {
 }
 
 function exportCSV() {
-  const data = computeAggregateScores();
-  const fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
-  let csv = 'Empresa,' + state.empresa + '\nFecha,' + fechaStr + '\n\nReto,Descripción,Tipo,Factible Promedio,Estratégico Promedio,Nota Final\n';
+  var data = computeAggregateScores();
+  var fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
+  var csv = 'Empresa,' + state.empresa + '\nFecha,' + fechaStr + '\n\nReto,Descripción,Tipo,Factible Promedio,Estratégico Promedio,Nota Final\n';
   data.forEach(function(d) {
     csv += '"' + d.ch.shortName + '","' + d.ch.title + '","' + d.ch.type + '",' + d.avgF.toFixed(2) + ',' + d.avgS.toFixed(2) + ',' + d.total.toFixed(2) + '\n';
   });
   try {
-    const blob = new Blob([csv], {type:'text/csv'});
-    const a = document.createElement('a');
+    var blob = new Blob([csv], {type:'text/csv'});
+    var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'evaluacion-retos-plynn.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -707,7 +1088,7 @@ function exportCSV() {
 }
 
 function showCSVModal(csv) {
-  const overlay = document.createElement('div');
+  var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = '<div style="background:white;border-radius:16px;padding:28px;max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">'
     + '<div style="font-family:Montserrat,sans-serif;">'
@@ -724,11 +1105,11 @@ function showCSVModal(csv) {
 }
 
 function printResults() {
-  const data = computeAggregateScores();
+  var data = computeAggregateScores();
   data.sort(function(a, b) { return b.total - a.total; });
-  const fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
-  const medals = ['🥇','🥈','🥉'];
-  const rows = data.map(function(d, i) {
+  var fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
+  var medals = ['🥇','🥈','🥉'];
+  var rows = data.map(function(d, i) {
     return '<tr><td>' + (medals[i]||'') + ' ' + (i+1) + '</td>'
       + '<td><strong>' + d.ch.shortName + '</strong><br><span style="font-size:11px;color:#666;">' + d.ch.title + '</span></td>'
       + '<td>' + d.ch.type + '</td>'
@@ -736,7 +1117,7 @@ function printResults() {
       + '<td>' + d.avgS.toFixed(2) + '</td>'
       + '<td><strong>' + d.total.toFixed(2) + '</strong></td></tr>';
   }).join('');
-  const win = window.open('', '_blank', 'width=900,height=700');
+  var win = window.open('', '_blank', 'width=900,height=700');
   if (!win) { alert('Por favor permite ventanas emergentes para imprimir.'); return; }
   win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resultados - ' + state.empresa + '</title>'
     + '<style>body{font-family:Arial,sans-serif;padding:32px;color:#1a2535;}h1{color:#1A3365;font-size:22px;margin-bottom:4px;}.meta{color:#666;font-size:13px;margin-bottom:24px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#1A3365;color:white;padding:10px 12px;text-align:left;}td{padding:10px 12px;border-bottom:1px solid #eee;}tr:nth-child(even) td{background:#f7f9fc;}.footer{margin-top:32px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px;}</style>'
@@ -750,7 +1131,13 @@ function printResults() {
   win.document.close();
 }
 
-function init() { renderEvaluators(); }
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+function init() {
+  renderEvaluators();
+  loadSessionList();
+}
 init();
 </script>
 </body>
