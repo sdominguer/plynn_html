@@ -276,7 +276,8 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
     <div class="form-grid" style="margin-bottom:20px;">
       <div class="form-section">
         <h2><span class="icon">🏢</span> Empresa</h2>
-        <input type="text" id="sessionEmpresa" placeholder="Ej: Plynn S.A.S.">
+        <input type="text" id="sessionEmpresa" readonly style="opacity:0.5;cursor:not-allowed;" placeholder="Se asigna automáticamente">
+        <div style="font-size:0.7rem;color:var(--text-mid);margin-top:6px;">Asignado automáticamente desde tu cuenta</div>
       </div>
       <div class="form-section">
         <h2><span class="icon">📅</span> Fecha de priorización</h2>
@@ -420,7 +421,8 @@ function loadSessionList() {
 
   updateDbStatus('loading', 'Conectando con Google Sheets...');
 
-  fetch(APPS_SCRIPT_URL + '?action=list')
+  var empresaParam = state.empresa ? '&empresa=' + encodeURIComponent(state.empresa) : '';
+  fetch(APPS_SCRIPT_URL + '?action=list' + empresaParam)
     .then(function(r) { return r.json(); })
     .then(function(data) {
       dbConnected = true;
@@ -563,18 +565,26 @@ function deleteSavedSession(sessionId, empresa) {
 
 function newSession() {
   state.sessionId = null;
-  state.empresa = '';
   state.fecha = '';
   state.evaluators = [];
   state.challenges = [];
   state.scores = {};
-  document.getElementById('sessionEmpresa').value = '';
+
+  var emailFromUrl = getUrlParam('empresa');
+  if (emailFromUrl) {
+    state.empresa = decodeURIComponent(emailFromUrl);
+    document.getElementById('sessionEmpresa').value = state.empresa;
+  } else {
+    state.empresa = '';
+    document.getElementById('sessionEmpresa').value = '';
+  }
+
   document.getElementById('sessionFecha').value = '';
   document.getElementById('numEvaluators').value = 3;
   document.getElementById('retos-list').innerHTML = '';
   retoIdCounter = 0;
   renderEvaluators();
-  showToast('Nueva sesión — configura los datos', 'info');
+  showToast('Nueva sesión creada', 'info');
 }
 
 function saveToSheets(showNotification) {
@@ -1132,28 +1142,26 @@ function printResults() {
 }
 
 // ============================================================
-// INITIALIZATION (with Wix email integration)
+// INICIALIZACIÓN
 // ============================================================
+function getUrlParam(name) {
+  return new URLSearchParams(window.location.search).get(name) || '';
+}
+
 function initFromUrl() {
-  var emailFromWix = getUrlParam('empresa');
-  if (emailFromWix) {
-    var decoded = decodeURIComponent(emailFromWix);
+  var email = getUrlParam('empresa');
+  if (email) {
+    var decoded = decodeURIComponent(email);
     document.getElementById('sessionEmpresa').value = decoded;
     state.empresa = decoded;
-    // Lock the field so user can't change it
-    document.getElementById('sessionEmpresa').readOnly = true;
-    document.getElementById('sessionEmpresa').style.opacity = '0.6';
-    document.getElementById('sessionEmpresa').title = 'Este campo se asigna automáticamente desde tu cuenta';
   }
 }
 
 function init() {
   renderEvaluators();
-  addIdea();
   initFromUrl();
   loadSessionList();
 }
-
 init();
 </script>
 </body>
