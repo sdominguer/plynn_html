@@ -267,10 +267,6 @@ button.del-btn:hover { background: var(--red-light); border-color: var(--red); }
       <div id="sessionListArea">
         <div style="text-align:center;padding:16px;color:var(--text-mid);font-size:0.82rem;">Cargando sesiones...</div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:14px;">
-        <button class="btn btn-sm btn-cyan" onclick="loadSessionList()" style="flex:1;">🔄 Actualizar</button>
-        <button class="btn btn-sm btn-secondary" onclick="newSession()" style="flex:1;">＋ Nueva sesión</button>
-      </div>
     </div>
 
     <div class="form-grid" style="margin-bottom:20px;">
@@ -1006,6 +1002,11 @@ function renderEvalBreakdown() {
   }).join('');
 }
 
+// ============================================================
+// FUNCIÓN DE GRÁFICA DE CUADRANTES (ejes corregidos)
+// X = Estratégico, Y = Factible
+// Los cuadrantes se mantienen en la misma posición visual
+// ============================================================
 function renderQuadrant(data) {
   var canvas = document.getElementById('quadrantChart');
   var ctx = canvas.getContext('2d');
@@ -1016,10 +1017,11 @@ function renderQuadrant(data) {
   ctx.scale(dpr, dpr);
   var pad = 72, w = size - pad * 2, h = size - pad * 2;
 
-  ctx.fillStyle = 'rgba(255,187,0,0.10)'; ctx.fillRect(pad, pad, w/2, h/2);
-  ctx.fillStyle = 'rgba(15,186,227,0.12)'; ctx.fillRect(pad+w/2, pad, w/2, h/2);
-  ctx.fillStyle = 'rgba(255,67,67,0.08)'; ctx.fillRect(pad, pad+h/2, w/2, h/2);
-  ctx.fillStyle = 'rgba(97,128,159,0.10)'; ctx.fillRect(pad+w/2, pad+h/2, w/2, h/2);
+  // Cuadrantes (misma posición visual)
+  ctx.fillStyle = 'rgba(255,187,0,0.10)'; ctx.fillRect(pad, pad, w/2, h/2);           // arriba-izq: Intraemprendimiento
+  ctx.fillStyle = 'rgba(15,186,227,0.12)'; ctx.fillRect(pad+w/2, pad, w/2, h/2);      // arriba-der: Innovación Priorizada
+  ctx.fillStyle = 'rgba(255,67,67,0.08)'; ctx.fillRect(pad, pad+h/2, w/2, h/2);       // abajo-izq: Descartados
+  ctx.fillStyle = 'rgba(97,128,159,0.10)'; ctx.fillRect(pad+w/2, pad+h/2, w/2, h/2);  // abajo-der: Innovación Abierta
 
   ctx.textAlign = 'center';
   function drawQuadLabel(text, x, y, color, icon) {
@@ -1037,16 +1039,103 @@ function renderQuadrant(data) {
   drawQuadLabel('Retos\nDescartados', pad+w/4, pad+h/2+12, '#cc2222', '🗑');
   drawQuadLabel('Retos de\nInnovación Abierta', pad+w*3/4, pad+h/2+12, '#3a5a6a', '🌐');
 
+  // Líneas divisorias
   ctx.strokeStyle = '#c0cfe0'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
   ctx.beginPath(); ctx.moveTo(pad+w/2, pad); ctx.lineTo(pad+w/2, pad+h); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(pad, pad+h/2); ctx.lineTo(pad+w, pad+h/2); ctx.stroke();
   ctx.setLineDash([]);
   ctx.strokeStyle = '#c0cfe0'; ctx.lineWidth = 1; ctx.strokeRect(pad, pad, w, h);
 
+  // Etiquetas de ejes: X = ESTRATÉGICO, Y = FACTIBLE
   ctx.fillStyle = '#1A3365'; ctx.font = 'bold 10px Montserrat, sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('← FACTIBLE →', pad+w/2, size-8);
+  ctx.fillText('← ESTRATÉGICO →', pad+w/2, size-8);
   ctx.save(); ctx.translate(14, pad+h/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText('← ESTRATÉGICO →', 0, 0); ctx.restore();
+  ctx.fillText('← FACTIBLE →', 0, 0); ctx.restore();
+
+  // Números en ejes
+  ctx.fillStyle = '#8a9ab0'; ctx.font = '600 9px Montserrat, sans-serif'; ctx.textAlign = 'center';
+  for (var v = 1; v <= 5; v++) {
+    var x = pad + ((v-1)/4) * w;
+    ctx.fillText(v, x, pad+h+16);
+    var y = pad + h - ((v-1)/4) * h;
+    ctx.textAlign = 'right'; ctx.fillText(v, pad-8, y+4); ctx.textAlign = 'center';
+  }
+
+  // Puntos: X = avgS (estratégico), Y = avgF (factible)
+  var colors = ['#1A3365','#0FBAE3','#FF4343','#FFBB00','#61809F','#0a7a9a','#cc2222','#8a6000','#2a6040','#7a2080'];
+  data.forEach(function(d, i) {
+    var x = pad + ((d.avgS-1)/4) * w;  // X = Estratégico
+    var y = pad + h - ((d.avgF-1)/4) * h;  // Y = Factible
+    var color = colors[i % colors.length];
+    ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.fillStyle = color + '18'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI*2); ctx.fillStyle = color + '28'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = color; ctx.font = 'bold 9.5px Montserrat, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(d.ch.shortName.replace(/^Reto\s*/i, 'R'), x, y + 3.5);
+  });
+
+  // Leyenda
+  var lx = pad, ly = pad + h + 32;
+  ctx.textAlign = 'left';
+  data.forEach(function(d, i) {
+    var color = colors[i % colors.length];
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx+5, ly, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#333'; ctx.font = '600 9px Montserrat, sans-serif';
+    var lbl = d.ch.shortName + ' (' + d.total.toFixed(1) + ')';
+    ctx.fillText(lbl, lx+13, ly+4);
+    lx += ctx.measureText(lbl).width + 26;
+    if (lx > size - 60) { lx = pad; ly += 16; }
+  });
+}
+
+// ============================================================
+// Función auxiliar: dibujar gráfica de cuadrantes en un canvas genérico
+// Usada por printResults para generar la imagen del gráfico
+// ============================================================
+function renderQuadrantToCanvas(canvas, data, canvasSize) {
+  var ctx = canvas.getContext('2d');
+  var size = canvasSize || 520;
+  canvas.width = size * 2; canvas.height = size * 2;
+  ctx.scale(2, 2);
+  var pad = 72, w = size - pad * 2, h = size - pad * 2;
+
+  // Fondo blanco
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  // Cuadrantes
+  ctx.fillStyle = 'rgba(255,187,0,0.10)'; ctx.fillRect(pad, pad, w/2, h/2);
+  ctx.fillStyle = 'rgba(15,186,227,0.12)'; ctx.fillRect(pad+w/2, pad, w/2, h/2);
+  ctx.fillStyle = 'rgba(255,67,67,0.08)'; ctx.fillRect(pad, pad+h/2, w/2, h/2);
+  ctx.fillStyle = 'rgba(97,128,159,0.10)'; ctx.fillRect(pad+w/2, pad+h/2, w/2, h/2);
+
+  ctx.textAlign = 'center';
+  function drawQuadLabel(text, x, y, color, icon) {
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.85;
+    var lines = text.split('\n');
+    ctx.font = '12px Montserrat, sans-serif';
+    ctx.fillText(icon, x, y - 4);
+    ctx.font = 'bold 8.5px Montserrat, sans-serif';
+    lines.forEach(function(line, i) { ctx.fillText(line, x, y + 10 + i * 12); });
+    ctx.globalAlpha = 1;
+  }
+  drawQuadLabel('Retos de\nIntraemprendimiento', pad+w/4, pad+12, '#8a6000', '');
+  drawQuadLabel('Retos de Innovación\nPriorizados', pad+w*3/4, pad+12, '#0a7a9a', '');
+  drawQuadLabel('Retos\nDescartados', pad+w/4, pad+h/2+12, '#cc2222', '');
+  drawQuadLabel('Retos de\nInnovación Abierta', pad+w*3/4, pad+h/2+12, '#3a5a6a', '');
+
+  ctx.strokeStyle = '#c0cfe0'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(pad+w/2, pad); ctx.lineTo(pad+w/2, pad+h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad, pad+h/2); ctx.lineTo(pad+w, pad+h/2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#c0cfe0'; ctx.lineWidth = 1; ctx.strokeRect(pad, pad, w, h);
+
+  // Ejes: X = Estratégico, Y = Factible
+  ctx.fillStyle = '#1A3365'; ctx.font = 'bold 10px Montserrat, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('ESTRATÉGICO', pad+w/2, size-8);
+  ctx.save(); ctx.translate(14, pad+h/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('FACTIBLE', 0, 0); ctx.restore();
 
   ctx.fillStyle = '#8a9ab0'; ctx.font = '600 9px Montserrat, sans-serif'; ctx.textAlign = 'center';
   for (var v = 1; v <= 5; v++) {
@@ -1058,8 +1147,8 @@ function renderQuadrant(data) {
 
   var colors = ['#1A3365','#0FBAE3','#FF4343','#FFBB00','#61809F','#0a7a9a','#cc2222','#8a6000','#2a6040','#7a2080'];
   data.forEach(function(d, i) {
-    var x = pad + ((d.avgF-1)/4) * w;
-    var y = pad + h - ((d.avgS-1)/4) * h;
+    var x = pad + ((d.avgS-1)/4) * w;  // X = Estratégico
+    var y = pad + h - ((d.avgF-1)/4) * h;  // Y = Factible
     var color = colors[i % colors.length];
     ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.fillStyle = color + '18'; ctx.fill();
     ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI*2); ctx.fillStyle = color + '28'; ctx.fill();
@@ -1068,6 +1157,7 @@ function renderQuadrant(data) {
     ctx.fillText(d.ch.shortName.replace(/^Reto\s*/i, 'R'), x, y + 3.5);
   });
 
+  // Leyenda
   var lx = pad, ly = pad + h + 32;
   ctx.textAlign = 'left';
   data.forEach(function(d, i) {
@@ -1114,11 +1204,20 @@ function showCSVModal(csv) {
   setTimeout(function() { var ta = document.getElementById('csvContent'); if(ta) ta.select(); }, 100);
 }
 
+// ============================================================
+// IMPRIMIR CON GRÁFICA DE CUADRANTES INCLUIDA
+// ============================================================
 function printResults() {
   var data = computeAggregateScores();
   data.sort(function(a, b) { return b.total - a.total; });
   var fechaStr = state.fecha ? new Date(state.fecha + 'T12:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'long', day:'numeric'}) : '';
   var medals = ['🥇','🥈','🥉'];
+
+  // Generar imagen del gráfico de cuadrantes
+  var tempCanvas = document.createElement('canvas');
+  renderQuadrantToCanvas(tempCanvas, data, 520);
+  var chartImageSrc = tempCanvas.toDataURL('image/png');
+
   var rows = data.map(function(d, i) {
     return '<tr><td>' + (medals[i]||'') + ' ' + (i+1) + '</td>'
       + '<td><strong>' + d.ch.shortName + '</strong><br><span style="font-size:11px;color:#666;">' + d.ch.title + '</span></td>'
@@ -1130,10 +1229,11 @@ function printResults() {
   var win = window.open('', '_blank', 'width=900,height=700');
   if (!win) { alert('Por favor permite ventanas emergentes para imprimir.'); return; }
   win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resultados - ' + state.empresa + '</title>'
-    + '<style>body{font-family:Arial,sans-serif;padding:32px;color:#1a2535;}h1{color:#1A3365;font-size:22px;margin-bottom:4px;}.meta{color:#666;font-size:13px;margin-bottom:24px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#1A3365;color:white;padding:10px 12px;text-align:left;}td{padding:10px 12px;border-bottom:1px solid #eee;}tr:nth-child(even) td{background:#f7f9fc;}.footer{margin-top:32px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px;}</style>'
+    + '<style>body{font-family:Arial,sans-serif;padding:32px;color:#1a2535;}h1{color:#1A3365;font-size:22px;margin-bottom:4px;}.meta{color:#666;font-size:13px;margin-bottom:24px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#1A3365;color:white;padding:10px 12px;text-align:left;}td{padding:10px 12px;border-bottom:1px solid #eee;}tr:nth-child(even) td{background:#f7f9fc;}.footer{margin-top:32px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px;}.chart-section{text-align:center;margin-bottom:28px;}.chart-section h2{font-size:16px;color:#1A3365;margin-bottom:12px;}.chart-section img{max-width:480px;width:100%;height:auto;}</style>'
     + '</head><body>'
     + '<h1>Mapa de Priorización de Retos · Plynn</h1>'
     + '<div class="meta">🏢 ' + state.empresa + ' &nbsp;·&nbsp; 📅 ' + fechaStr + ' &nbsp;·&nbsp; 👥 ' + state.evaluators.length + ' evaluador(es)</div>'
+    + '<div class="chart-section"><h2>Matriz Estratégico × Factible</h2><img src="' + chartImageSrc + '" alt="Gráfica de Cuadrantes"></div>'
     + '<table><thead><tr><th>#</th><th>Reto</th><th>Tipo</th><th>Factible</th><th>Estratégico</th><th>Nota Final</th></tr></thead><tbody>' + rows + '</tbody></table>'
     + '<div class="footer">Generado por Plynn · Plataforma de Innovación</div>'
     + '<scr' + 'ipt>window.onload=function(){window.print();}<\/scr' + 'ipt>'
